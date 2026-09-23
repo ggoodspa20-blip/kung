@@ -56,18 +56,14 @@
     .bet-btn.odd { color: var(--red-main); }
     .bet-btn .thai-text { font-size: 1.8rem; font-weight: 600; margin-bottom: 5px; }
     .bet-btn .eng-text { font-size: 0.8rem; font-weight: 500; letter-spacing: 1px; }
-
-    /* Active States */
     .bet-btn.even.selected { border-color: var(--blue-main); box-shadow: 0 0 15px var(--blue-glow); background: rgba(59, 130, 246, 0.05); }
     .bet-btn.odd.selected { border-color: var(--red-main); box-shadow: 0 0 15px var(--red-glow); background: rgba(239, 68, 68, 0.05); }
 
-    /* Amount Input */
+    /* Amount Input & Buttons */
     .input-group { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
     .input-group span { font-size: 0.9rem; color: var(--text-muted); }
     .input-group input { background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; font-weight: 600; text-align: right; width: 60%; outline: none; font-family: 'Kanit', sans-serif; }
     .input-group input::placeholder { color: #475569; }
-
-    /* Submit Button */
     .btn-submit { width: 100%; background: linear-gradient(90deg, #ff6b6b, #ff4757); color: white; border: none; border-radius: 12px; padding: 18px 0; font-size: 1.2rem; font-weight: 600; font-family: 'Kanit', sans-serif; box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4); cursor: pointer; margin-bottom: 25px; transition: transform 0.1s; }
     .btn-submit:active { transform: scale(0.98); }
 
@@ -107,6 +103,36 @@
 </head>
 <body>
 
+  <!-- ==============================================
+       Modal: แจ้งเติมเครดิต (ซ่อนไว้เป็นค่าเริ่มต้น)
+       ============================================== -->
+  <div id="topupModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; position: relative;">
+      
+      <h3 style="margin-top: 0; color: var(--blue-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">แจ้งเติมเครดิต</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">จำนวนเงินที่ต้องการเติม</label>
+        <input type="number" id="txtTopupAmount" placeholder="เช่น 500" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1.2rem; outline: none;">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">วิธีชำระเงิน</label>
+        <select id="selTopupMethod" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;">
+          <option value="โอนเงิน (ส่งสลิปในแชท)">โอนเงินผ่านบัญชีธนาคาร</option>
+          <option value="เงินสด (เรียกพนักงาน)">จ่ายเงินสดที่เคาน์เตอร์</option>
+        </select>
+        <small style="color: var(--yellow-text); display: block; margin-top: 8px;">* กรณีโอนเงิน กรุณาส่งสลิปยืนยันในแชท LINE นี้หลังกดแจ้ง</small>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button onclick="closeTopupModal()" style="flex: 1; background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); border-radius: 8px; padding: 12px; font-family: 'Kanit'; cursor: pointer;">ยกเลิก</button>
+        <button onclick="submitTopupRequest()" style="flex: 1; background: var(--blue-main); border: none; color: white; border-radius: 8px; padding: 12px; font-family: 'Kanit'; font-weight: 600; cursor: pointer;">ส่งแจ้งแอดมิน</button>
+      </div>
+      
+    </div>
+  </div>
+
   <div class="container">
     
     <!-- ==============================================
@@ -114,7 +140,7 @@
          ============================================== -->
     <div class="header-card">
       <div class="header-box" style="display: flex; align-items: center; gap: 12px; padding: 8px 15px;">
-        <img id="profileImage" src="https://via.placeholder.com/150/1c1e2b/ffffff?text=U" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--blue-main);">
+        <img id="profileImage" src="https://via.placeholder.com/150/1c1e2b/ffffff?text=U" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--blue-main); object-fit: cover;">
         <div>
           <div class="label" id="userIdLabel">รหัสสมาชิก: <span id="memberIdDisplay">-</span></div>
           <div class="value" id="tableDisplay">กำลังโหลด...</div>
@@ -123,7 +149,7 @@
       <div class="header-box" style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
         <div class="label">เครดิตคงเหลือ</div>
         <div class="value val-green" id="creditDisplay">฿0</div>
-        <!-- เพิ่มปุ่มแจ้งเติมเงินตรงนี้ -->
+        <!-- ปุ่มแจ้งเติมเครดิต -->
         <button onclick="openTopupModal()" style="margin-top: 5px; background: var(--blue-main); border: none; color: white; border-radius: 6px; padding: 4px; font-size: 0.75rem; font-family: 'Kanit'; cursor: pointer;">
           <i class="fa-solid fa-plus"></i> แจ้งเติมเครดิต
         </button>
@@ -490,7 +516,61 @@
       } catch (error) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
     }
 
-    // เริ่มการทำงานระบบทันที
+    // 8. ฟังก์ชันแจ้งเติมเครดิต (Top-up)
+    function openTopupModal() {
+      if (currentUserStatus !== 'Active') {
+        alert("บัญชีของคุณยังไม่พร้อมใช้งาน กรุณาแจ้งแอดมินเพื่อเปิดระบบครับ");
+        return;
+      }
+      document.getElementById('topupModal').classList.remove('hidden');
+    }
+    
+    function closeTopupModal() {
+      document.getElementById('topupModal').classList.add('hidden');
+      document.getElementById('txtTopupAmount').value = '';
+    }
+
+    async function submitTopupRequest() {
+      const amount = document.getElementById('txtTopupAmount').value;
+      const method = document.getElementById('selTopupMethod').value;
+      
+      if (!amount || amount <= 0) {
+        alert("กรุณาระบุจำนวนเงินให้ถูกต้อง");
+        return;
+      }
+
+      document.querySelector('#topupModal button:nth-child(2)').innerText = 'กำลังส่ง...';
+
+      const payload = {
+        action: 'requestTopup',
+        uid: currentLineUserId, 
+        displayName: currentDisplayName,
+        amount: parseFloat(amount),
+        method: method
+      };
+
+      try {
+        const response = await fetch(APP_CONFIG.GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        const res = await response.json();
+        
+        if(res.status === 'success') {
+          alert("แจ้งเรื่องสำเร็จ! แอดมินกำลังดำเนินการเติมเครดิตให้ครับ");
+          closeTopupModal();
+        } else {
+          alert("เกิดข้อผิดพลาด: " + res.message);
+        }
+      } catch (error) {
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      } finally {
+        document.querySelector('#topupModal button:nth-child(2)').innerText = 'ส่งแจ้งแอดมิน';
+      }
+    }
+
+    // เริ่มการทำงานระบบทันทีเมื่อเปิดเว็บ
     initializeApp();
   </script>
 </body>
