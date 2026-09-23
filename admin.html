@@ -21,6 +21,7 @@
       --blue-main: #3b82f6;
       --green-main: #10b981;
       --red-main: #ef4444;
+      --yellow-main: #f39c12;
     }
 
     body { font-family: 'Kanit', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 20px; }
@@ -43,6 +44,7 @@
     .btn-green { background: var(--green-main); }
     .btn-red { background: var(--red-main); }
     .btn-blue { background: var(--blue-main); }
+    .btn-yellow { background: var(--yellow-main); }
 
     .switch-mode { display: flex; background: #0f111a; border-radius: 8px; padding: 4px; margin-bottom: 15px;}
     .switch-btn { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 6px; font-size: 0.9rem; color: var(--text-muted);}
@@ -55,6 +57,32 @@
     <div class="header">
       <div class="header-title"><i class="fa-solid fa-user-shield"></i> Admin Panel</div>
       <div class="op-badge" id="opProfile">Op: Loading...</div>
+    </div>
+
+    <!-- ==========================================
+         การควบคุมรอบ (Round Control)
+         ========================================== -->
+    <div class="card">
+      <div class="card-title" style="color: var(--yellow-main);"><i class="fa-solid fa-stopwatch"></i> ควบคุมรอบชั่งกุ้ง</div>
+      
+      <div style="background: #0f111a; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; border: 1px solid var(--card-border);">
+        <div style="color: var(--text-muted); font-size: 0.9rem;">รอบปัจจุบัน</div>
+        <div id="adminRoundId" style="font-size: 1.5rem; font-weight: bold; color: var(--yellow-main);">-</div>
+        <div id="adminRoundStatus" style="font-size: 1rem; color: var(--text-main); margin-top: 5px;">กำลังโหลด...</div>
+      </div>
+
+      <div class="btn-group" style="margin-bottom: 15px;">
+        <button class="btn btn-green" onclick="controlRound('createRound')"><i class="fa-solid fa-play"></i> 1. เปิดรอบใหม่</button>
+        <button class="btn btn-yellow" onclick="controlRound('closeBetting')"><i class="fa-solid fa-pause"></i> 2. ปิดรับแทง</button>
+      </div>
+
+      <div class="form-group" style="border-top: 1px dashed var(--card-border); padding-top: 15px; margin-bottom: 0;">
+        <label>น้ำหนักกุ้ง (กรัม)</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="number" id="txtShrimpWeight" class="form-control" placeholder="เช่น 54" style="flex: 2;">
+          <button class="btn btn-blue" style="flex: 1;" onclick="submitFinalize()"><i class="fa-solid fa-scale-balanced"></i> 3. ตัดผล</button>
+        </div>
+      </div>
     </div>
 
     <!-- ==========================================
@@ -130,8 +158,92 @@
       } catch (e) {
         console.log("Running in browser mode");
       }
+      
+      // ดึงสถานะรอบล่าสุดมาแสดง
+      fetchAdminDashboard();
+      setInterval(fetchAdminDashboard, 3000);
     }
 
+    async function fetchAdminDashboard() {
+      try {
+        const url = `${APP_CONFIG.GAS_URL}?action=getDashboard`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if(data && data.roundId) {
+          document.getElementById('adminRoundId').innerText = data.roundId;
+          
+          let statusText = '';
+          if (data.status === 'Open') statusText = '🟢 เปิดรับแทง';
+          else if (data.status === 'Closed') statusText = '🔴 ปิดรับแทง (รอชั่งกุ้ง)';
+          else statusText = '⚫ จบรอบแล้ว';
+          
+          document.getElementById('adminRoundStatus').innerText = statusText;
+        }
+      } catch (error) {
+        console.error("Dashboard Fetch Error", error);
+      }
+    }
+
+    async function postDataToGAS(payload) {
+      const response = await fetch(APP_CONFIG.GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      return await response.json();
+    }
+
+    // ==========================================
+    // ฟังก์ชันควบคุมรอบ (เปิดรอบ / ปิดรับแทง / ตัดผล)
+    // ==========================================
+    async function controlRound(actionCmd) {
+      if (actionCmd === 'createRound' && !confirm('ยืนยันการเปิดรอบใหม่?')) return;
+      if (actionCmd === 'closeBetting' && !confirm('ยืนยันการปิดรับแทง?\n(ลูกค้าจะไม่สามารถกดยืนยันแทงหรือยกเลิกบิลได้)')) return;
+
+      const payload = { action: actionCmd, uid: currentOpId };
+      try {
+        const res = await postDataToGAS(payload);
+        if(res.status === 'success') {
+          alert(res.message);
+          fetchAdminDashboard();
+        } else {
+          alert(res.message);
+        }
+      } catch (e) {
+        alert("เชื่อมต่อล้มเหลว");
+      }
+    }
+
+    async function submitFinalize() {
+      const weight = document.getElementById('txtShrimpWeight').value;
+      if (!weight || weight <= 0) {
+        alert("กรุณากรอกน้ำหนักกุ้งที่ชั่งได้จริง");
+        return;
+      }
+      if (!confirm(`ยืนยันการตัดผลรอบนี้ที่น้ำหนัก ${weight} กรัม ใช่หรือไม่?\n(ระบบจะคำนวณเงินคืนให้ผู้ชนะทันที)`)) return;
+
+      document.querySelector('.btn-blue').innerText = 'กำลังประมวลผล...';
+      const payload = { action: 'finalizeRound', weight: parseFloat(weight), uid: currentOpId };
+      
+      try {
+        const res = await postDataToGAS(payload);
+        if(res.status === 'success') {
+          alert(res.message);
+          document.getElementById('txtShrimpWeight').value = '';
+          fetchAdminDashboard();
+        } else {
+          alert(res.message);
+        }
+      } catch (e) {
+        alert("เชื่อมต่อล้มเหลว");
+      } finally {
+        document.querySelector('.btn-blue').innerHTML = '<i class="fa-solid fa-scale-balanced"></i> 3. ตัดผล';
+      }
+    }
+
+    // ==========================================
+    // ฟังก์ชันการจัดการระบบอื่นๆ 
+    // ==========================================
     function setCreditMode(mode) {
       creditMode = mode;
       document.getElementById('creditModeTable').classList.remove('active');
@@ -146,16 +258,6 @@
       }
     }
 
-    async function postDataToGAS(payload) {
-      const response = await fetch(APP_CONFIG.GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-      });
-      return await response.json();
-    }
-
-    // 1. ฟังก์ชัน เติม/ถอน เงิน
     async function processCredit(type) {
       let targetId = document.getElementById('txtTargetId').value;
       let amount = document.getElementById('txtAmount').value;
@@ -163,74 +265,46 @@
       if(!targetId || !amount || amount <= 0) {
         alert("กรุณากรอกข้อมูลให้ครบและถูกต้อง"); return;
       }
-
       if(!confirm(`ยืนยันการ ${type === 'deposit' ? 'เติม' : 'ถอน'} เงิน ${amount} บาท?`)) return;
 
-      const payload = {
-        action: 'manageCredit',
-        targetId: targetId,
-        type: type,
-        amount: parseFloat(amount),
-        isPrivate: (creditMode === 'private'),
-        uid: currentOpId
-      };
-
+      const payload = { action: 'manageCredit', targetId: targetId, type: type, amount: parseFloat(amount), isPrivate: (creditMode === 'private'), uid: currentOpId };
       const res = await postDataToGAS(payload);
       if(res.status === 'success') {
         alert(`สำเร็จ! ยอดเงินคงเหลือ: ${res.newBalance} บาท`);
         document.getElementById('txtAmount').value = "";
-      } else {
-        alert(res.message);
-      }
+      } else { alert(res.message); }
     }
 
-    // 2. ฟังก์ชัน อนุมัติ/ระงับ สิทธิ์ลูกค้า
     async function setUserStatus(status) {
       let targetUid = document.getElementById('txtTargetUserUid').value;
-      if(!targetUid) {
-        alert("กรุณาระบุ UID ของลูกค้าก่อนครับ");
-        return;
-      }
-
+      if(!targetUid) { alert("กรุณาระบุ UID ของลูกค้าก่อนครับ"); return; }
+      
       let actionName = status === 'Active' ? 'อนุมัติ (เปิดระบบ)' : 'ระงับ (ปิดระบบ)';
       if(!confirm(`ยืนยันการ ${actionName} ให้ลูกค้ารายนี้?`)) return;
 
-      const payload = {
-        action: 'updateUserStatus',
-        targetUid: targetUid,
-        newStatus: status
-      };
-
+      const payload = { action: 'updateUserStatus', targetUid: targetUid, newStatus: status };
       try {
         const res = await postDataToGAS(payload);
         if(res.status === 'success') {
           alert(res.message);
           document.getElementById('txtTargetUserUid').value = ''; 
-        } else {
-          alert(res.message);
-        }
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-      }
+        } else { alert(res.message); }
+      } catch (error) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
     }
 
-    // 3. ฟังก์ชัน ยกเลิกบิล
     async function cancelBet() {
       let betId = document.getElementById('txtBetId').value;
       if(!betId) { alert("กรุณาระบุรหัสบิล"); return; }
-      
       if(!confirm("ยืนยันการยกเลิกบิลนี้ และคืนเครดิตให้ลูกค้า?")) return;
 
       const res = await postDataToGAS({ action: 'cancelBet', betId: betId, uid: currentOpId });
-      
       if(res.status === 'success') {
         alert(res.message);
         document.getElementById('txtBetId').value = "";
-      } else {
-        alert(res.message);
-      }
+      } else { alert(res.message); }
     }
 
+    // เริ่มทำงาน
     initializeApp();
   </script>
 </body>
