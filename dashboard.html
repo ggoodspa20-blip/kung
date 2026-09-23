@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบหลังบ้าน - บ่อตกกุ้ง</title>
+  
+  <!-- โหลด Config -->
+  <script src="config.js"></script>
+  <!-- โหลด LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  
+  <style>
+    body { font-family: 'Kanit', sans-serif; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .round-id { font-size: 2.5rem; font-weight: bold; color: #f1c40f; }
+    .status { font-size: 1.2rem; padding: 5px 15px; border-radius: 15px; margin-top: 5px; display: inline-block; }
+    .status.Open { background: #2ecc71; }
+    .status.Ended { background: #7f8c8d; }
+    
+    .board-container { display: flex; justify-content: space-between; gap: 10px; height: 30vh; margin-bottom: 20px;}
+    .side { flex: 1; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .side.even { background: #2980b9; }
+    .side.odd { background: #c0392b; }
+    .title { font-size: 2rem; font-weight: bold; }
+    .amount { font-size: 4rem; font-weight: bold; }
+    
+    .admin-panel { background: #333; padding: 20px; border-radius: 10px; text-align: center; }
+    button { padding: 10px 20px; font-size: 1rem; font-family: 'Kanit'; cursor: pointer; border: none; border-radius: 5px; margin: 5px; }
+    .btn-green { background: #2ecc71; color: white; }
+    .btn-blue { background: #3498db; color: white; }
+    .btn-red { background: #e74c3c; color: white; }
+    
+    input { padding: 10px; font-size: 1rem; width: 80px; text-align: center; border-radius: 5px; border: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div id="profileArea" style="color:#aaa; font-size: 0.9rem; margin-bottom: 10px;">กำลังล็อกอิน LINE...</div>
+    <div class="round-id" id="roundIdDisplay">กำลังโหลด...</div>
+    <div class="status" id="statusDisplay">-</div>
+  </div>
+
+  <div class="board-container">
+    <div class="side even">
+      <div class="title">ซ้าย (คู่)</div>
+      <div class="amount" id="evenAmount">0</div>
+    </div>
+    <div class="side odd">
+      <div class="title">ขวา (คี่)</div>
+      <div class="amount" id="oddAmount">0</div>
+    </div>
+  </div>
+
+  <!-- เครื่องมือจำลองการยิง API (สำหรับแอดมิน / พนักงานหน้าเคาน์เตอร์) -->
+  <div class="admin-panel">
+    <h3>แผงควบคุม (ทดสอบ API)</h3>
+    
+    <button class="btn-green" onclick="createRound()">1. เปิดรอบใหม่</button>
+    <hr style="border-color: #555; margin: 15px 0;">
+    
+    <div>
+      โต๊ะ: <input type="number" id="txtTable" value="1">
+      ยอด: <input type="number" id="txtAmount" value="100" step="10">
+    </div>
+    <div style="margin-top: 10px;">
+      <button class="btn-blue" onclick="placeBet('คู่')">2. แทง คู่</button>
+      <button class="btn-red" onclick="placeBet('คี่')">2. แทง คี่</button>
+    </div>
+    <hr style="border-color: #555; margin: 15px 0;">
+    
+    <div>
+      น้ำหนัก (กรัม): <input type="number" id="txtWeight" value="54">
+      <button class="btn-blue" onclick="finalizeRound()">3. ตัดผล (ชั่งกุ้ง)</button>
+    </div>
+  </div>
+
+  <script>
+    let currentLineUserId = "";
+
+    // ==========================================
+    // 1. Initialize LIFF
+    // ==========================================
+    async function initializeApp() {
+      try {
+        await liff.init({ liffId: APP_CONFIG.LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          const profile = await liff.getProfile();
+          currentLineUserId = profile.userId;
+          document.getElementById('profileArea').innerText = `User: ${profile.displayName}`;
+          
+          fetchDashboard();
+          setInterval(fetchDashboard, 3000); // Polling ดึงข้อมูลทุก 3 วิ
+        }
+      } catch (err) {
+        document.getElementById('profileArea').innerText = `LIFF Error: ${err}`;
+      }
+    }
+
+    // ==========================================
+    // 2. ดึงข้อมูล (GET)
+    // ==========================================
+    async function fetchDashboard() {
+      try {
+        const url = `${APP_CONFIG.GAS_URL}?action=getDashboard&uid=${currentLineUserId}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        updateUI(data);
+      } catch (error) {
+        console.error("Fetch Error:", error);
+      }
+    }
+
+    function updateUI(data) {
+      if(!data || data.status === 'error') return;
+      document.getElementById('roundIdDisplay').innerText = data.roundId;
+      document.getElementById('evenAmount').innerText = data.totalEven.toLocaleString();
+      document.getElementById('oddAmount').innerText = data.totalOdd.toLocaleString();
+      
+      let statusEl = document.getElementById('statusDisplay');
+      statusEl.innerText = data.status === 'Open' ? 'กำลังรับยอด' : (data.status === 'Ended' ? 'จบรอบแล้ว' : data.status);
+      statusEl.className = 'status ' + data.status;
+    }
+
+    // ==========================================
+    // 3. Helper สำหรับยิง POST (ใช้ text/plain แก้ปัญหา CORS)
+    // ==========================================
+    async function postDataToGAS(payload) {
+      try {
+        const response = await fetch(APP_CONFIG.GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' } // สำคัญมาก ห้ามใช้ application/json
+        });
+        return await response.json();
+      } catch (error) {
+        console.error("POST Error:", error);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
+    }
+
+    // ==========================================
+    // 4. ฟังก์ชันกดปุ่ม Action
+    // ==========================================
+    async function createRound() {
+      const res = await postDataToGAS({ action: 'createRound', uid: currentLineUserId });
+      if(res.status === 'success') { alert(res.message); fetchDashboard(); }
+      else alert(res.message);
+    }
+
+    async function placeBet(betType) {
+      const tableNo = document.getElementById('txtTable').value;
+      const amount = document.getElementById('txtAmount').value;
+      const res = await postDataToGAS({ 
+        action: 'placeBet', 
+        uid: currentLineUserId,
+        tableNo: tableNo,
+        betType: betType,
+        amount: parseFloat(amount)
+      });
+      if(res.status === 'success') { 
+        console.log(`เครดิตคงเหลือ: ${res.newBalance}`);
+        fetchDashboard(); 
+      } else {
+        alert(res.message);
+      }
+    }
+
+    async function finalizeRound() {
+      const weight = document.getElementById('txtWeight').value;
+      const res = await postDataToGAS({ 
+        action: 'finalizeRound', 
+        uid: currentLineUserId,
+        weight: parseFloat(weight)
+      });
+      if(res.status === 'success') { 
+        alert(`${res.message} (น้ำหนัก ${res.weight}g)`); 
+        fetchDashboard(); 
+      } else {
+        alert(res.message);
+      }
+    }
+
+    // เริ่มทำงาน
+    initializeApp();
+  </script>
+</body>
+</html>
