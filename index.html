@@ -120,9 +120,13 @@
           <div class="value" id="tableDisplay">กำลังโหลด...</div>
         </div>
       </div>
-      <div class="header-box" style="text-align: right;">
+      <div class="header-box" style="text-align: right; display: flex; flex-direction: column; justify-content: center;">
         <div class="label">เครดิตคงเหลือ</div>
         <div class="value val-green" id="creditDisplay">฿0</div>
+        <!-- เพิ่มปุ่มแจ้งเติมเงินตรงนี้ -->
+        <button onclick="openTopupModal()" style="margin-top: 5px; background: var(--blue-main); border: none; color: white; border-radius: 6px; padding: 4px; font-size: 0.75rem; font-family: 'Kanit'; cursor: pointer;">
+          <i class="fa-solid fa-plus"></i> แจ้งเติมเครดิต
+        </button>
       </div>
     </div>
 
