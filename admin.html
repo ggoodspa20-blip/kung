@@ -276,20 +276,33 @@
     }
 
     async function setUserStatus(status) {
-      let targetUid = document.getElementById('txtTargetUserUid').value;
-      if(!targetUid) { alert("กรุณาระบุ UID ของลูกค้าก่อนครับ"); return; }
-      
-      let actionName = status === 'Active' ? 'อนุมัติ (เปิดระบบ)' : 'ระงับ (ปิดระบบ)';
-      if(!confirm(`ยืนยันการ ${actionName} ให้ลูกค้ารายนี้?`)) return;
+      // ดึงค่าและลบช่องว่างหัวท้ายออกด้วย .trim() เผื่อแอดมินเผลอเคาะสเปซบาร์
+      let targetId = document.getElementById('txtTargetUserUid').value.trim(); 
+      if(!targetId) {
+        alert("กรุณาระบุรหัสสมาชิก (เช่น M0001) ของลูกค้าก่อนครับ");
+        return;
+      }
 
-      const payload = { action: 'updateUserStatus', targetUid: targetUid, newStatus: status };
+      let actionName = status === 'Active' ? 'อนุมัติ (เปิดระบบ)' : 'ระงับ (ปิดระบบ)';
+      if(!confirm(`ยืนยันการ ${actionName} ให้รหัส ${targetId} ?`)) return;
+
+      const payload = {
+        action: 'updateUserStatus',
+        targetId: targetId, // ส่งรหัสกลับไปหา GAS
+        newStatus: status
+      };
+
       try {
         const res = await postDataToGAS(payload);
         if(res.status === 'success') {
           alert(res.message);
           document.getElementById('txtTargetUserUid').value = ''; 
-        } else { alert(res.message); }
-      } catch (error) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
+        } else {
+          alert(res.message);
+        }
+      } catch (error) {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      }
     }
 
     async function cancelBet() {
