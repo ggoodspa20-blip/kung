@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>แอปผู้เล่น - บ่อตกกุ้ง</title>
+  
+  <!-- โหลด Config และ LIFF -->
+  <script src="config.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <!-- โหลด FontAwesome สำหรับไอคอน -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+    
+    :root {
+      --bg-dark: #12141e;
+      --card-bg: #1c1e2b;
+      --card-border: #2a2d3d;
+      --blue-main: #3b82f6;
+      --blue-glow: rgba(59, 130, 246, 0.3);
+      --red-main: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.3);
+      --green-text: #10b981;
+      --yellow-text: #f59e0b;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+    }
+
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      padding-bottom: 80px; /* เผื่อที่ให้ Bottom Nav */
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Header Profile & Credit */
+    .header-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .header-box {
+      background: var(--card-bg);
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      flex: 1;
+    }
+    .header-box:first-child { margin-right: 10px; }
+    .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+    .value { font-size: 1.2rem; font-weight: 600; }
+    .val-green { color: var(--green-text); }
+
+    /* Toggle Mode (โต๊ะ / ส่วนตัว) */
+    .mode-selector {
+      display: flex;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 20px;
+      border: 1px solid var(--card-border);
+    }
+    .mode-btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+    .mode-btn.active {
+      background: #2a2d3d;
+      color: var(--text-main);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Round Info */
+    .round-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .round-id { font-size: 1.1rem; font-weight: 600; }
+    .round-status { font-size: 0.8rem; color: var(--text-muted); }
+    .timer { font-size: 1.5rem; font-weight: 600; color: var(--yellow-text); }
+
+    /* Betting Buttons */
+    .bet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .bet-btn {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 16px;
+      padding: 25px 0;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .bet-btn.even { color: var(--blue-main); }
+    .bet-btn.odd { color: var(--red-main); }
+    
+    .bet-btn .thai-text { font-size: 1.8rem; font-weight: 600; margin-bottom: 5px; }
+    .bet-btn .eng-text { font-size: 0.8rem; font-weight: 500; letter-spacing: 1px; }
+
+    /* Active States */
+    .bet-btn.even.selected {
+      border-color: var(--blue-main);
+      box-shadow: 0 0 15px var(--blue-glow);
+      background: rgba(59, 130, 246, 0.05);
+    }
+    .bet-btn.odd.selected {
+      border-color: var(--red-main);
+      box-shadow: 0 0 15px var(--red-glow);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    /* Amount Input */
+    .input-group {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+    .input-group span { font-size: 0.9rem; color: var(--text-muted); }
+    .input-group input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: right;
+      width: 60%;
+      outline: none;
+      font-family: 'Kanit', sans-serif;
+    }
+    .input-group input::placeholder { color: #475569; }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ff4757);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 18px 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      font-family: 'Kanit', sans-serif;
+      box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+      cursor: pointer;
+      margin-bottom: 25px;
+      transition: transform 0.1s;
+    }
+    .btn-submit:active { transform: scale(0.98); }
+
+    /* Previous Result */
+    .prev-result {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .prev-result-left { display: flex; align-items: center; gap: 15px; }
+    .prev-result i { font-size: 1.5rem; color: var(--text-muted); }
+    .prev-title { font-size: 0.8rem; color: var(--text-muted); }
+    .prev-val { font-size: 1.2rem; font-weight: 600; }
+    .badge-win {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--blue-main);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0 20px 0;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      gap: 5px;
+      cursor: pointer;
+    }
+    .nav-item.active { color: var(--red-main); }
+    .nav-item i { font-size: 1.2rem; }
+    
+    /* Utility */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header-card">
+      <div class="header-box">
+        <div class="label" id="userIdLabel">ข้อมูลของคุณ</div>
+        <div class="value" id="tableDisplay">โต๊ะ 7</div>
+      </div>
+      <div class="header-box" style="text-align: right;">
+        <div class="label">เครดิตคงเหลือ</div>
+        <div class="value val-green" id="creditDisplay">฿0</div>
+      </div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+      <div class="mode-btn active" id="modeTable" onclick="setMode('table')">เล่นแบบลงโต๊ะ</div>
+      <div class="mode-btn" id="modePrivate" onclick="setMode('private')">เล่นส่วนตัว</div>
+    </div>
+
+    <!-- Round Info -->
+    <div class="round-info">
+      <div>
+        <div class="round-id" id="roundIdDisplay">รอบ โหลด...</div>
+        <div class="round-status" id="statusDisplay">สถานะ: -</div>
+      </div>
+      <!-- ตัวอย่าง Timer วิ่ง (สำหรับ UI) -->
+      <div class="timer" id="timerDisplay">00:00</div>
+    </div>
+
+    <!-- Betting Buttons -->
+    <div class="bet-grid">
+      <div class="bet-btn even" id="btnEven" onclick="selectBet('คู่')">
+        <div class="thai-text">คู่</div>
+        <div class="eng-text">EVEN</div>
+      </div>
+      <div class="bet-btn odd" id="btnOdd" onclick="selectBet('คี่')">
+        <div class="thai-text">คี่</div>
+        <div class="eng-text">ODD</div>
+      </div>
+    </div>
+
+    <!-- Amount Input -->
+    <div class="input-group">
+      <span>ยอดแทง</span>
+      <input type="number" id="txtAmount" placeholder="฿0" pattern="[0-9]*">
+    </div>
+
+    <!-- Submit Button -->
+    <button class="btn-submit" onclick="submitBet()">ยืนยันการแทง</button>
+
+    <!-- Previous Result -->
+    <div class="prev-result">
+      <div class="prev-result-left">
+        <i class="fa-solid fa-scale-balanced"></i>
+        <div>
+          <div class="prev-title">ผลรอบก่อนหน้า</div>
+          <div class="prev-val" id="prevWeight">รอข้อมูล...</div>
+        </div>
+      </div>
+      <div class="badge-win" id="prevResultBadge">-</div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <i class="fa-solid fa-bullseye"></i>
+      <span>แทง</span>
+    </div>
+    <div class="nav-item">
+      <i class="fa-solid fa-receipt"></i>
+      <span>ผลรอบ</span>
+    </div>
+    <div class="nav-item">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span>ประวัติ</span>
+    </div>
+  </div>
+
+  <script>
+    let currentLineUserId = "";
+    let currentDisplayName = "";
+    let selectedBetType = "";
+    let playMode = "table"; // ค่าเริ่มต้น: table หรือ private
+    let userTableNo = "7"; // ค่าจำลอง ดึงจริงจาก URL Parameter (เช่น ?table=7)
+
+    // 1. Initial Setup & LIFF
+    async function initializeApp() {
+      // ดึงหมายเลขโต๊ะจาก URL Parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      if(urlParams.get('table')) {
+        userTableNo = urlParams.get('table');
+      }
+      document.getElementById('tableDisplay').innerText = `โต๊ะ ${userTableNo}`;
+
+      try {
+        await liff.init({ liffId: APP_CONFIG.LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          const profile = await liff.getProfile();
+          currentLineUserId = profile.userId;
+          currentDisplayName = profile.displayName;
+          
+          fetchDashboard();
+          setInterval(fetchDashboard, 3000); 
+        }
+      } catch (err) {
+        console.error("LIFF Init Error:", err);
+        // Fallback สำหรับทดสอบบน Browser
+        fetchDashboard();
+      }
+    }
+
+    // 2. ควบคุม UI Selection
+    function setMode(mode) {
+      playMode = mode;
+      document.getElementById('modeTable').classList.remove('active');
+      document.getElementById('modePrivate').classList.remove('active');
+      
+      if(mode === 'table') {
+        document.getElementById('modeTable').classList.add('active');
+        document.getElementById('userIdLabel').innerText = "ข้อมูลของคุณ";
+        document.getElementById('tableDisplay').innerText = `โต๊ะ ${userTableNo}`;
+        // TODO: สั่งดึงเครดิตของโต๊ะมาแสดง
+      } else {
+        document.getElementById('modePrivate').classList.add('active');
+        document.getElementById('userIdLabel').innerText = "บัญชีส่วนตัว";
+        document.getElementById('tableDisplay').innerText = currentDisplayName || "ผู้เล่น";
+        // TODO: สั่งดึงเครดิตส่วนตัวของผู้เล่นมาแสดง
+      }
+    }
+
+    function selectBet(type) {
+      selectedBetType = type;
+      document.getElementById('btnEven').classList.remove('selected');
+      document.getElementById('btnOdd').classList.remove('selected');
+      
+      if(type === 'คู่') document.getElementById('btnEven').classList.add('selected');
+      if(type === 'คี่') document.getElementById('btnOdd').classList.add('selected');
+    }
+
+    // 3. API Fetch Data
+    async function fetchDashboard() {
+      try {
+        const url = `${APP_CONFIG.GAS_URL}?action=getDashboard&uid=${currentLineUserId}&table=${userTableNo}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        updateUI(data);
+      } catch (error) {
+        console.error("Fetch Error:", error);
+      }
+    }
+
+    function updateUI(data) {
+      if(!data || data.status === 'error') return;
+      document.getElementById('roundIdDisplay').innerText = `รอบ ${data.roundId}`;
+      document.getElementById('statusDisplay').innerText = data.status === 'Open' ? 'เปิดรับแทง' : 'ปิดรับแทง';
+      
+      // ตัวอย่างการอัปเดตเครดิต (ต้องให้ Backend ส่งค่าเครดิตล่าสุดกลับมาด้วย)
+      if(data.credit) {
+        document.getElementById('creditDisplay').innerText = `฿${data.credit.toLocaleString()}`;
+      }
+    }
+
+    // 4. API Submit Bet
+    async function submitBet() {
+      const amount = document.getElementById('txtAmount').value;
+      
+      if(!selectedBetType) {
+        alert("กรุณาเลือก คู่ หรือ คี่");
+        return;
+      }
+      if(!amount || amount <= 0) {
+        alert("กรุณาระบุยอดแทง");
+        return;
+      }
+
+      // แสดง Loading (สามารถปรับเป็น SweetAlert ได้)
+      document.querySelector('.btn-submit').innerText = "กำลังดำเนินการ...";
+      
+      const payload = {
+        action: 'placeBet',
+        uid: currentLineUserId,
+        tableNo: userTableNo,
+        playMode: playMode, // ส่งไปบอก Backend ว่าตัดเครดิตโต๊ะ หรือ เครดิตส่วนตัว
+        betType: selectedBetType,
+        amount: parseFloat(amount)
+      };
+
+      try {
+        const response = await fetch(APP_CONFIG.GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        const res = await response.json();
+        
+        if(res.status === 'success') {
+          // รีเซ็ตฟอร์ม
+          document.getElementById('txtAmount').value = "";
+          selectBet(""); // clear selection
+          document.getElementById('creditDisplay').innerText = `฿${res.newBalance.toLocaleString()}`;
+          alert("รับยอดสำเร็จ!");
+        } else {
+          alert(res.message);
+        }
+      } catch (error) {
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      } finally {
+        document.querySelector('.btn-submit').innerText = "ยืนยันการแทง";
+        fetchDashboard();
+      }
+    }
+
+    // เริ่มทำงานเมื่อเปิดหน้าเว็บ
+    initializeApp();
+  </script>
+</body>
+</html>
