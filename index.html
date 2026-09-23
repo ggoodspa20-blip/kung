@@ -125,9 +125,12 @@
   <div class="container">
     <!-- Header: ข้อมูลผู้เล่นและเครดิต -->
     <div class="header-card">
-      <div class="header-box">
-        <div class="label" id="userIdLabel">ข้อมูลของคุณ</div>
-        <div class="value" id="tableDisplay">โต๊ะ 7</div>
+      <div class="header-box" style="display: flex; align-items: center; gap: 12px; padding: 8px 15px;">
+        <img id="profileImage" src="https://via.placeholder.com/150/1c1e2b/ffffff?text=U" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--blue-main);">
+        <div>
+          <div class="label" id="userIdLabel">รหัสสมาชิก: <span id="memberIdDisplay">-</span></div>
+          <div class="value" id="tableDisplay">กำลังโหลด...</div>
+        </div>
       </div>
       <div class="header-box" style="text-align: right;">
         <div class="label">เครดิตคงเหลือ</div>
@@ -136,9 +139,24 @@
     </div>
 
     <!-- ==============================================
-         VIEW 1: หน้าสำหรับแทง (Betting View) 
+         VIEW: รออนุมัติสิทธิ์ (Pending View)
          ============================================== -->
-    <div id="bettingView">
+    <div id="pendingView" class="hidden" style="text-align: center; padding: 60px 20px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--card-border);">
+      <i class="fa-solid fa-lock" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 20px;"></i>
+      <h2 style="margin: 0; color: var(--text-main);">รอการอนุมัติสิทธิ์</h2>
+      <p style="color: var(--text-muted); margin-top: 10px;">บัญชีของคุณยังไม่เปิดใช้งาน (สถานะ: Inactive) โปรดแจ้งแอดมินหรือพนักงานหน้าเคาน์เตอร์เพื่อยืนยันตัวตนครับ</p>
+      <div style="margin-top: 20px; color: var(--blue-main); font-weight: bold;">
+        รหัสอ้างอิง: <span id="pendingMemberId">-</span>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         VIEW 1: หน้าสำหรับแทง (Betting View) 
+         (ซ่อนไว้เป็นค่าเริ่มต้น จะแสดงเมื่อ Active เท่านั้น)
+         ============================================== -->
+    <div id="bettingView" class="hidden">
+       <!-- ... (โค้ดปุ่มคู่คี่/ยอดแทง แบบเดิม ไว้ในนี้) ... -->
+    </div>
       
       <!-- Mode Selector -->
       <div class="mode-selector">
