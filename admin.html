@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Admin Panel - บ่อตกกุ้ง</title>
+  
+  <script src="config.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+    
+    :root {
+      --bg-dark: #12141e;
+      --card-bg: #1c1e2b;
+      --card-border: #2a2d3d;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --blue-main: #3b82f6;
+      --green-main: #10b981;
+      --red-main: #ef4444;
+    }
+
+    body { font-family: 'Kanit', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 20px; }
+    .header { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 15px;}
+    .header-title { font-size: 1.5rem; font-weight: 600; }
+    .op-badge { background: #334155; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; }
+    
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: var(--blue-main); border-bottom: 1px dashed var(--card-border); padding-bottom: 10px;}
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 5px; }
+    .form-control { width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;}
+    .form-control:focus { border-color: var(--blue-main); }
+    
+    .btn-group { display: flex; gap: 10px; }
+    .btn { flex: 1; border: none; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; font-weight: 600; cursor: pointer; color: white; transition: 0.2s;}
+    .btn:active { transform: scale(0.98); }
+    .btn-green { background: var(--green-main); }
+    .btn-red { background: var(--red-main); }
+    .btn-blue { background: var(--blue-main); }
+
+    .switch-mode { display: flex; background: #0f111a; border-radius: 8px; padding: 4px; margin-bottom: 15px;}
+    .switch-btn { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 6px; font-size: 0.9rem; color: var(--text-muted);}
+    .switch-btn.active { background: #2a2d3d; color: white; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-title"><i class="fa-solid fa-user-shield"></i> Admin Panel</div>
+    <div class="op-badge" id="opProfile">Op: Loading...</div>
+  </div>
+
+  <!-- การจัดการเครดิต -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-coins"></i> ระบบ เติม / ถอน เครดิต</div>
+    
+    <div class="switch-mode">
+      <div class="switch-btn active" id="creditModeTable" onclick="setCreditMode('table')">ลูกค้าลงโต๊ะ</div>
+      <div class="switch-btn" id="creditModePrivate" onclick="setCreditMode('private')">ลูกค้าส่วนตัว (UID)</div>
+    </div>
+
+    <div class="form-group">
+      <label id="targetLabel">หมายเลขโต๊ะ</label>
+      <input type="text" id="txtTargetId" class="form-control" placeholder="ระบุเบอร์โต๊ะ หรือ UID">
+    </div>
+    
+    <div class="form-group">
+      <label>จำนวนเงิน (บาท)</label>
+      <input type="number" id="txtAmount" class="form-control" placeholder="0">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-green" onclick="processCredit('deposit')"><i class="fa-solid fa-arrow-up"></i> เติมเงิน (ฝาก)</button>
+      <button class="btn btn-red" onclick="processCredit('withdraw')"><i class="fa-solid fa-arrow-down"></i> ถอนเงิน (คืน)</button>
+    </div>
+  </div>
+
+  <!-- การยกเลิกบิล (Refund) -->
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-ban"></i> ยกเลิกบิล / ดึงเครดิตคืน</div>
+    <div class="form-group">
+      <label>รหัสบิล (Bet ID)</label>
+      <input type="text" id="txtBetId" class="form-control" placeholder="เช่น B1700000000000">
+      <small style="color: var(--text-muted); display: block; margin-top: 5px;">*ยกเลิกได้เฉพาะรอบที่ยังเปิดรับแทงอยู่เท่านั้น</small>
+    </div>
+    <button class="btn btn-red" style="width: 100%;" onclick="cancelBet()"><i class="fa-solid fa-trash-can"></i> ยกเลิกและคืนเครดิต</button>
+  </div>
+
+  <script>
+    let currentOpId = "Op01"; // Default for testing
+    let creditMode = "table";
+
+    async function initializeApp() {
+      try {
+        await liff.init({ liffId: APP_CONFIG.LIFF_ID });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          currentOpId = profile.userId;
+          document.getElementById('opProfile').innerText = profile.displayName;
+        }
+      } catch (e) {
+        console.log("Running in browser mode");
+      }
+    }
+
+    function setCreditMode(mode) {
+      creditMode = mode;
+      document.getElementById('creditModeTable').classList.remove('active');
+      document.getElementById('creditModePrivate').classList.remove('active');
+      
+      if(mode === 'table') {
+        document.getElementById('creditModeTable').classList.add('active');
+        document.getElementById('targetLabel').innerText = "หมายเลขโต๊ะ";
+      } else {
+        document.getElementById('creditModePrivate').classList.add('active');
+        document.getElementById('targetLabel').innerText = "รหัสลูกค้า (UID)";
+      }
+    }
+
+    async function postDataToGAS(payload) {
+      const response = await fetch(APP_CONFIG.GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      return await response.json();
+    }
+
+    async function processCredit(type) {
+      let targetId = document.getElementById('txtTargetId').value;
+      let amount = document.getElementById('txtAmount').value;
+
+      if(!targetId || !amount || amount <= 0) {
+        alert("กรุณากรอกข้อมูลให้ครบและถูกต้อง"); return;
+      }
+
+      if(!confirm(`ยืนยันการ ${type === 'deposit' ? 'เติม' : 'ถอน'} เงิน ${amount} บาท?`)) return;
+
+      const payload = {
+        action: 'manageCredit',
+        targetId: targetId,
+        type: type,
+        amount: parseFloat(amount),
+        isPrivate: (creditMode === 'private'),
+        uid: currentOpId
+      };
+
+      const res = await postDataToGAS(payload);
+      if(res.status === 'success') {
+        alert(`สำเร็จ! ยอดเงินคงเหลือ: ${res.newBalance} บาท`);
+        document.getElementById('txtAmount').value = "";
+      } else {
+        alert(res.message);
+      }
+    }
+
+    async function cancelBet() {
+      let betId = document.getElementById('txtBetId').value;
+      if(!betId) { alert("กรุณาระบุรหัสบิล"); return; }
+      
+      if(!confirm("ยืนยันการยกเลิกบิลนี้ และคืนเครดิตให้ลูกค้า?")) return;
+
+      const res = await postDataToGAS({ action: 'cancelBet', betId: betId, uid: currentOpId });
+      
+      if(res.status === 'success') {
+        alert(res.message);
+        document.getElementById('txtBetId').value = "";
+      } else {
+        alert(res.message);
+      }
+    }
+
+    initializeApp();
+  </script>
+</body>
+</html>
