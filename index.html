@@ -8,7 +8,6 @@
   <!-- โหลด Config และ LIFF -->
   <script src="config.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <!-- โหลด FontAwesome สำหรับไอคอน -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
@@ -28,29 +27,16 @@
       --text-muted: #94a3b8;
     }
 
-    body {
-      font-family: 'Kanit', sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      margin: 0;
-      padding: 0;
-      padding-bottom: 80px; /* เผื่อที่ให้ Bottom Nav */
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    body { font-family: 'Kanit', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 80px; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px; }
 
     /* Header Profile & Credit */
     .header-card { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .header-box { background: var(--card-bg); padding: 12px 20px; border-radius: 12px; border: 1px solid var(--card-border); flex: 1; }
+    .header-box { background: var(--card-bg); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--card-border); flex: 1; }
     .header-box:first-child { margin-right: 10px; }
-    .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-    .value { font-size: 1.2rem; font-weight: 600; }
-    .val-green { color: var(--green-text); }
+    .label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2px; }
+    .value { font-size: 1.1rem; font-weight: 600; }
+    .val-green { color: var(--green-text); font-size: 1.2rem;}
 
     /* Toggle Mode */
     .mode-selector { display: flex; background: var(--card-bg); border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--card-border); }
@@ -93,7 +79,7 @@
     .prev-val { font-size: 1.2rem; font-weight: 600; }
     .badge-win { background: rgba(59, 130, 246, 0.2); color: var(--blue-main); padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; }
 
-    /* ------------- เพิ่มเติม: หน้าประวัติ History CSS ------------- */
+    /* History CSS */
     .history-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .hist-info { display: flex; flex-direction: column; gap: 5px; }
     .hist-round { font-size: 1rem; font-weight: 600; }
@@ -116,14 +102,16 @@
     .nav-item.active { color: var(--red-main); }
     .nav-item i { font-size: 1.2rem; }
     
-    /* Utility */
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <!-- Header: ข้อมูลผู้เล่นและเครดิต -->
+    
+    <!-- ==============================================
+         Header: ข้อมูลผู้เล่นและรูปโปรไฟล์ 
+         ============================================== -->
     <div class="header-card">
       <div class="header-box" style="display: flex; align-items: center; gap: 12px; padding: 8px 15px;">
         <img id="profileImage" src="https://via.placeholder.com/150/1c1e2b/ffffff?text=U" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--blue-main);">
@@ -144,27 +132,22 @@
     <div id="pendingView" class="hidden" style="text-align: center; padding: 60px 20px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--card-border);">
       <i class="fa-solid fa-lock" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 20px;"></i>
       <h2 style="margin: 0; color: var(--text-main);">รอการอนุมัติสิทธิ์</h2>
-      <p style="color: var(--text-muted); margin-top: 10px;">บัญชีของคุณยังไม่เปิดใช้งาน (สถานะ: Inactive) โปรดแจ้งแอดมินหรือพนักงานหน้าเคาน์เตอร์เพื่อยืนยันตัวตนครับ</p>
-      <div style="margin-top: 20px; color: var(--blue-main); font-weight: bold;">
+      <p style="color: var(--text-muted); margin-top: 10px;">บัญชีของคุณยังไม่เปิดใช้งาน (สถานะ: Inactive)<br>โปรดแจ้งแอดมินหรือพนักงานหน้าเคาน์เตอร์เพื่อเปิดระบบครับ</p>
+      <div style="margin-top: 20px; font-size: 1.1rem; color: var(--blue-main); font-weight: bold;">
         รหัสอ้างอิง: <span id="pendingMemberId">-</span>
       </div>
     </div>
 
     <!-- ==============================================
          VIEW 1: หน้าสำหรับแทง (Betting View) 
-         (ซ่อนไว้เป็นค่าเริ่มต้น จะแสดงเมื่อ Active เท่านั้น)
          ============================================== -->
     <div id="bettingView" class="hidden">
-       <!-- ... (โค้ดปุ่มคู่คี่/ยอดแทง แบบเดิม ไว้ในนี้) ... -->
-    </div>
       
-      <!-- Mode Selector -->
       <div class="mode-selector">
         <div class="mode-btn active" id="modeTable" onclick="setMode('table')">เล่นแบบลงโต๊ะ</div>
         <div class="mode-btn" id="modePrivate" onclick="setMode('private')">เล่นส่วนตัว</div>
       </div>
 
-      <!-- Round Info -->
       <div class="round-info">
         <div>
           <div class="round-id" id="roundIdDisplay">รอบ โหลด...</div>
@@ -173,7 +156,6 @@
         <div class="timer" id="timerDisplay">LIVE</div>
       </div>
 
-      <!-- Betting Buttons -->
       <div class="bet-grid">
         <div class="bet-btn even" id="btnEven" onclick="selectBet('คู่')">
           <div class="thai-text">คู่</div>
@@ -185,16 +167,13 @@
         </div>
       </div>
 
-      <!-- Amount Input -->
       <div class="input-group">
         <span>ยอดแทง</span>
         <input type="number" id="txtAmount" placeholder="฿0" pattern="[0-9]*">
       </div>
 
-      <!-- Submit Button -->
       <button class="btn-submit" onclick="submitBet()">ยืนยันการแทง</button>
 
-      <!-- Previous Result -->
       <div class="prev-result">
         <div class="prev-result-left">
           <i class="fa-solid fa-scale-balanced"></i>
@@ -208,7 +187,7 @@
     </div>
     
     <!-- ==============================================
-         VIEW 2: หน้าประวัติ (History View) ซ่อนไว้ตอนเริ่ม
+         VIEW 2: หน้าประวัติ (History View)
          ============================================== -->
     <div id="historyView" class="hidden">
       <h3 style="margin-top:0; color: var(--text-main);">ประวัติการเล่น (20 บิลล่าสุด)</h3>
@@ -221,8 +200,10 @@
 
   </div>
 
-  <!-- Bottom Navigation -->
-  <div class="bottom-nav">
+  <!-- ==============================================
+       Bottom Navigation 
+       ============================================== -->
+  <div class="bottom-nav" id="bottomNavMenu" style="display: none;">
     <div class="nav-item active" onclick="switchTab('bet')">
       <i class="fa-solid fa-bullseye"></i>
       <span>แทง</span>
@@ -237,20 +218,26 @@
     </div>
   </div>
 
+  <!-- ==============================================
+       JavaScript Logic
+       ============================================== -->
   <script>
     let currentLineUserId = "";
     let currentDisplayName = "";
     let selectedBetType = "";
     let playMode = "table"; 
     let userTableNo = "7"; 
+    
+    let currentUserStatus = "Inactive";
+    let memberId = "";
 
     // 1. Initial Setup & LIFF
     async function initializeApp() {
+      // เช็คเลขโต๊ะจาก URL เช่น ?table=7
       const urlParams = new URLSearchParams(window.location.search);
       if(urlParams.get('table')) {
         userTableNo = urlParams.get('table');
       }
-      document.getElementById('tableDisplay').innerText = `โต๊ะ ${userTableNo}`;
 
       try {
         await liff.init({ liffId: APP_CONFIG.LIFF_ID });
@@ -261,16 +248,66 @@
           currentLineUserId = profile.userId;
           currentDisplayName = profile.displayName;
           
-          fetchDashboard();
-          setInterval(fetchDashboard, 3000); 
+          if(profile.pictureUrl) {
+            document.getElementById('profileImage').src = profile.pictureUrl;
+          }
+
+          // ส่งข้อมูลไปยืนยันตัวตนที่ Backend
+          await authenticateUser(profile);
         }
       } catch (err) {
-        console.error("LIFF Init Error:", err);
-        fetchDashboard();
+        console.error("LIFF Error:", err);
       }
     }
 
-    // 2. ควบคุม UI Selection (โหมด & ปุ่มคู่คี่)
+    // 2. ฟังก์ชันตรวจสอบสิทธิ์และสร้างบัญชี (Authentication)
+    async function authenticateUser(profile) {
+      const payload = {
+        action: 'loginUser',
+        uid: profile.userId,
+        displayName: profile.displayName,
+        pictureUrl: profile.pictureUrl || ''
+      };
+
+      try {
+        const response = await fetch(APP_CONFIG.GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+        const res = await response.json();
+        
+        if (res.status === 'success') {
+          memberId = res.memberId;
+          currentUserStatus = res.userStatus; // เช็คว่าเป็น Active หรือ Inactive
+          
+          document.getElementById('memberIdDisplay').innerText = memberId;
+          document.getElementById('pendingMemberId').innerText = memberId;
+          document.getElementById('tableDisplay').innerText = `โต๊ะ ${userTableNo}`;
+          document.getElementById('creditDisplay').innerText = `฿${res.credit.toLocaleString()}`;
+
+          // ตรวจสอบว่าเปิดบิลให้แทงได้ไหม?
+          if (currentUserStatus === 'Active') {
+            document.getElementById('bettingView').classList.remove('hidden');
+            document.getElementById('pendingView').classList.add('hidden');
+            document.getElementById('bottomNavMenu').style.display = 'flex'; // แสดงเมนูล่าง
+            
+            fetchDashboard();
+            setInterval(fetchDashboard, 3000);
+          } else {
+            // โดนล็อก
+            document.getElementById('bettingView').classList.add('hidden');
+            document.getElementById('historyView').classList.add('hidden');
+            document.getElementById('pendingView').classList.remove('hidden');
+            document.getElementById('bottomNavMenu').style.display = 'none'; // ซ่อนเมนูล่าง
+          }
+        }
+      } catch (error) {
+        alert("ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้");
+      }
+    }
+
+    // 3. ควบคุม UI (โหมดโต๊ะ/ส่วนตัว และ ปุ่มแทง)
     function setMode(mode) {
       playMode = mode;
       document.getElementById('modeTable').classList.remove('active');
@@ -278,15 +315,12 @@
       
       if(mode === 'table') {
         document.getElementById('modeTable').classList.add('active');
-        document.getElementById('userIdLabel').innerText = "ข้อมูลของคุณ";
         document.getElementById('tableDisplay').innerText = `โต๊ะ ${userTableNo}`;
       } else {
         document.getElementById('modePrivate').classList.add('active');
-        document.getElementById('userIdLabel').innerText = "บัญชีส่วนตัว";
-        document.getElementById('tableDisplay').innerText = currentDisplayName || "ผู้เล่น";
+        document.getElementById('tableDisplay').innerText = currentDisplayName || "บัญชีส่วนตัว";
       }
       
-      // ถ้าอยู่หน้าประวัติ ให้โหลดประวัติของโหมดใหม่ทันที
       if(!document.getElementById('historyView').classList.contains('hidden')) {
         loadHistory();
       }
@@ -301,7 +335,7 @@
       if(type === 'คี่') document.getElementById('btnOdd').classList.add('selected');
     }
 
-    // 3. ระบบสลับหน้า (Tabs)
+    // 4. ระบบสลับหน้า (Tabs)
     function switchTab(tab) {
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       
@@ -317,32 +351,30 @@
       }
     }
 
-    // 4. API Fetch Dashboard Data
+    // 5. ดึงข้อมูล Dashboard สด
     async function fetchDashboard() {
+      if (currentUserStatus !== 'Active') return; // ถ้าโดนบล็อก ไม่ต้องโหลดข้อมูล
+
       try {
         const url = `${APP_CONFIG.GAS_URL}?action=getDashboard&uid=${currentLineUserId}&table=${userTableNo}`;
         const response = await fetch(url);
         const data = await response.json();
-        updateUI(data);
+        
+        if(data && data.status !== 'error') {
+          document.getElementById('roundIdDisplay').innerText = `รอบ ${data.roundId}`;
+          document.getElementById('statusDisplay').innerText = data.status === 'Open' ? 'เปิดรับแทง' : 'ปิดรับแทง';
+          if(data.credit !== undefined) {
+            document.getElementById('creditDisplay').innerText = `฿${data.credit.toLocaleString()}`;
+          }
+        }
       } catch (error) {
         console.error("Fetch Error:", error);
       }
     }
 
-    function updateUI(data) {
-      if(!data || data.status === 'error') return;
-      document.getElementById('roundIdDisplay').innerText = `รอบ ${data.roundId}`;
-      document.getElementById('statusDisplay').innerText = data.status === 'Open' ? 'เปิดรับแทง' : 'ปิดรับแทง';
-      
-      if(data.credit !== undefined) {
-        document.getElementById('creditDisplay').innerText = `฿${data.credit.toLocaleString()}`;
-      }
-    }
-
-    // 5. API Submit Bet
+    // 6. ฟังก์ชันกดยืนยันแทง
     async function submitBet() {
       const amount = document.getElementById('txtAmount').value;
-      
       if(!selectedBetType) { alert("กรุณาเลือก คู่ หรือ คี่"); return; }
       if(!amount || amount <= 0) { alert("กรุณาระบุยอดแทง"); return; }
 
@@ -381,7 +413,7 @@
       }
     }
 
-    // 6. API Load History
+    // 7. โหลดประวัติ และ ยกเลิกบิล
     async function loadHistory() {
       const listDiv = document.getElementById('historyList');
       listDiv.innerHTML = '<div style="text-align:center; padding: 20px;">กำลังโหลด...</div>';
@@ -392,76 +424,57 @@
         const res = await response.json();
         
         if (res.status === 'success') {
-          renderHistory(res.data);
-        } else {
-          listDiv.innerHTML = `<div style="text-align:center; color:red;">${res.message}</div>`;
+          listDiv.innerHTML = '';
+          if (res.data.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;">ยังไม่มีประวัติการแทง</div>';
+            return;
+          }
+          
+          res.data.forEach(item => {
+            let typeClass = item.betType === 'คู่' ? 'even' : 'odd';
+            let statusHtml = '';
+            let cancelBtnHtml = '';
+            
+            if (item.status === 'Active') {
+              statusHtml = `<span class="badge-status st-active">รอผล</span>`;
+              cancelBtnHtml = `<button class="btn-cancel-bet" onclick="userCancelBet('${item.betId}')">ยกเลิกบิล</button>`;
+            } else if (item.status === 'Win') {
+              statusHtml = `<span class="badge-status st-win">+฿${item.payout.toLocaleString()}</span>`;
+            } else if (item.status === 'Lose') {
+              statusHtml = `<span class="badge-status st-lose">เสีย</span>`;
+            } else if (item.status === 'Cancelled') {
+              statusHtml = `<span class="badge-status st-cancel">ยกเลิกแล้ว</span>`;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'history-card';
+            card.innerHTML = `
+              <div class="hist-info">
+                <div class="hist-round">${item.roundId}</div>
+                <div class="hist-time">${item.time}</div>
+                <div class="hist-type ${typeClass}">${item.betType}</div>
+              </div>
+              <div class="hist-action">
+                <div class="hist-amt">฿${item.amount.toLocaleString()}</div>
+                <div style="margin-bottom: 5px;">${statusHtml}</div>
+                ${cancelBtnHtml}
+              </div>
+            `;
+            listDiv.appendChild(card);
+          });
         }
       } catch (error) {
         listDiv.innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
       }
     }
 
-    function renderHistory(data) {
-      const listDiv = document.getElementById('historyList');
-      listDiv.innerHTML = '';
-      
-      if (!data || data.length === 0) {
-        listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;">ยังไม่มีประวัติการแทง</div>';
-        return;
-      }
-      
-      data.forEach(item => {
-        let typeClass = item.betType === 'คู่' ? 'even' : 'odd';
-        let statusHtml = '';
-        let cancelBtnHtml = '';
-        
-        if (item.status === 'Active') {
-          statusHtml = `<span class="badge-status st-active">รอผล</span>`;
-          cancelBtnHtml = `<button class="btn-cancel-bet" onclick="userCancelBet('${item.betId}')">ยกเลิกบิล</button>`;
-        } 
-        else if (item.status === 'Win') {
-          statusHtml = `<span class="badge-status st-win">+฿${item.payout.toLocaleString()}</span>`;
-        } 
-        else if (item.status === 'Lose') {
-          statusHtml = `<span class="badge-status st-lose">เสีย</span>`;
-        } 
-        else if (item.status === 'Cancelled') {
-          statusHtml = `<span class="badge-status st-cancel">ยกเลิกแล้ว</span>`;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'history-card';
-        card.innerHTML = `
-          <div class="hist-info">
-            <div class="hist-round">${item.roundId}</div>
-            <div class="hist-time">${item.time}</div>
-            <div class="hist-type ${typeClass}">${item.betType}</div>
-          </div>
-          <div class="hist-action">
-            <div class="hist-amt">฿${item.amount.toLocaleString()}</div>
-            <div style="margin-bottom: 5px;">${statusHtml}</div>
-            ${cancelBtnHtml}
-          </div>
-        `;
-        listDiv.appendChild(card);
-      });
-    }
-
-    // 7. API ลูกค้ายกเลิกบิล
     async function userCancelBet(betId) {
       if(!confirm("คุณต้องการยกเลิกบิลนี้ และรับเครดิตคืนใช่หรือไม่?")) return;
       
-      const payload = {
-        action: 'cancelBet',
-        betId: betId,
-        uid: currentLineUserId 
-      };
-
+      const payload = { action: 'cancelBet', betId: betId, uid: currentLineUserId };
       try {
         const response = await fetch(APP_CONFIG.GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         const res = await response.json();
         
@@ -469,14 +482,11 @@
           alert("ยกเลิกบิลและคืนเครดิตสำเร็จ");
           loadHistory(); 
           fetchDashboard(); 
-        } else {
-          alert(res.message); 
-        }
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-      }
+        } else { alert(res.message); }
+      } catch (error) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
     }
 
+    // เริ่มการทำงานระบบทันที
     initializeApp();
   </script>
 </body>
