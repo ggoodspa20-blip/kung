@@ -4,4 +4,5 @@ const APP_CONFIG = {
     
     // ใส่ LIFF ID ที่ตั้งค่าไว้ใน LINE Developers
      LIFF_ID: "2009043114-xI8nWTT5"
+     LIFF_ID: "2009043114-EfiHSaA5"
 };
