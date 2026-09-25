@@ -324,7 +324,7 @@
       }
 
       try {
-        await liff.init({ liffId: APP_CONFIG.LIFF_ID });
+        await liff.init({ liffId: APP_CONFIG.INDEX_LIFF_ID });
         if (!liff.isLoggedIn()) {
           liff.login();
         } else {
