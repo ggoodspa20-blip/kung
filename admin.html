@@ -237,7 +237,7 @@
 
     async function initializeApp() {
       try {
-        await liff.init({ liffId: APP_CONFIG.LIFF_ID });
+        await liff.init({ liffId: APP_CONFIG.ADMIN_LIFF_ID });
         if (liff.isLoggedIn()) {
           const profile = await liff.getProfile();
           currentOpId = profile.userId;
