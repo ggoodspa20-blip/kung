@@ -339,7 +339,7 @@
           await authenticateUser(profile);
         }
       } catch (err) {
-        console.error("LIFF Error:", err);
+        alert("เกิดข้อผิดพลาดในการโหลด LINE LIFF: " + err.message);
       }
       
       startCountdownTimer();
@@ -360,6 +360,17 @@
         const res = await response.json();
         
         if (res.status === 'success') {
+          
+          // ==========================================
+          // ระบบ Redirect อัตโนมัติ (แยกแอดมิน / ลูกค้า)
+          // ==========================================
+          if (res.role === 'Superadmin' || res.role === 'Admin' || res.role === 'Operator') {
+             // ถ้าไม่ใช่ Customer ให้เด้งไปหน้า Admin Panel ทันที
+             window.location.replace("admin.html");
+             return; // หยุดการทำงานหน้าผู้เล่น
+          }
+
+          // ถ้าเป็น Customer ให้แสดงหน้าผู้เล่นตามปกติ
           memberId = res.memberId;
           currentUserStatus = res.userStatus; 
           
@@ -381,9 +392,11 @@
             document.getElementById('pendingView').classList.remove('hidden');
             document.getElementById('bottomNavMenu').style.display = 'none'; 
           }
+        } else {
+          alert("แจ้งเตือนจากระบบ: " + res.message);
         }
       } catch (error) {
-        alert("Error หลังบ้าน: " + error.message);
+        alert("Error หลังบ้าน (Failed to fetch): ไม่สามารถเชื่อมต่อฐานข้อมูลได้ โปรดเช็คลิงก์ Web App");
       }
     }
 
@@ -430,7 +443,6 @@
       }
     }
 
-    // ฟังก์ชันนับเวลาถอยหลัง (1 วินาที)
     function startCountdownTimer() {
       if(timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -504,9 +516,7 @@
             document.getElementById('prevResultBadge').innerText = `-`;
           }
         }
-      } catch (error) {
-        console.error("Fetch Error:", error);
-      }
+      } catch (error) {}
     }
 
     async function submitBet() {
