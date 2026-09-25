@@ -109,22 +109,42 @@
 </head>
 <body>
 
-  <!-- Modal แจ้งเติมเครดิต -->
+  <!-- Modal แจ้งฝาก/ถอน เครดิต -->
   <div id="topupModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
     <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; position: relative;">
-      <h3 style="margin-top: 0; color: var(--blue-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">แจ้งเติมเครดิต</h3>
+      <h3 style="margin-top: 0; color: var(--blue-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">แจ้งทำรายการ ฝาก/ถอน</h3>
+      
       <div style="margin-bottom: 15px;">
-        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">จำนวนเงินที่ต้องการเติม</label>
-        <input type="number" id="txtTopupAmount" placeholder="เช่น 500" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1.2rem; outline: none;">
-      </div>
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">วิธีชำระเงิน</label>
-        <select id="selTopupMethod" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;">
-          <option value="โอนเงิน (ส่งสลิปในแชท)">โอนเงินผ่านบัญชีธนาคาร</option>
-          <option value="เงินสด (เรียกพนักงาน)">จ่ายเงินสดที่เคาน์เตอร์</option>
+        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">ประเภทรายการ</label>
+        <select id="selTransactionType" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;" onchange="toggleWithdrawOptions()">
+          <option value="ฝากเงิน">ฝากเงิน (เติมเครดิต)</option>
+          <option value="ถอนเงิน">ถอนเงิน (คืนเครดิต)</option>
         </select>
-        <small style="color: var(--yellow-text); display: block; margin-top: 8px;">* กรณีโอนเงิน กรุณาส่งสลิปยืนยันในแชท LINE นี้หลังกดแจ้ง</small>
       </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">จำนวนเงิน</label>
+        <input type="number" id="txtTopupAmount" placeholder="ระบุจำนวนเงิน" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1.2rem; outline: none;">
+      </div>
+      
+      <div style="margin-bottom: 20px;" id="paymentMethodSection">
+        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">วิธีรับ/จ่ายเงิน</label>
+        <select id="selTopupMethod" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;">
+          <option value="โอนเงิน (แจ้งในแชท)">ผ่านบัญชีธนาคาร (ส่งสลิป/เลขบัญชี ในแชท)</option>
+          <option value="เงินสด (เรียกพนักงาน)">เงินสด (ติดต่อพนักงาน)</option>
+        </select>
+      </div>
+
+      <!-- ส่วนตัวเลือกค่าน้ำ (จะแสดงเมื่อเลือก "ถอนเงิน") -->
+      <div style="margin-bottom: 20px; display: none;" id="withdrawOptionsSection">
+        <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">เงื่อนไขการถอน</label>
+        <select id="selWithdrawFee" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;">
+          <option value="หักค่าน้ำ">ถอนแบบปกติ (หักค่าน้ำตามระบบ)</option>
+          <option value="ไม่หักค่าน้ำ">ถอนเต็มจำนวน (ไม่หักค่าน้ำ)</option>
+        </select>
+        <small style="color: var(--yellow-text); display: block; margin-top: 8px;">*แอดมินจะพิจารณาเงื่อนไขการถอนตามความเหมาะสม</small>
+      </div>
+
       <div style="display: flex; gap: 10px;">
         <button onclick="closeTopupModal()" style="flex: 1; background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); border-radius: 8px; padding: 12px; font-family: 'Kanit'; cursor: pointer;">ยกเลิก</button>
         <button onclick="submitTopupRequest()" style="flex: 1; background: var(--blue-main); border: none; color: white; border-radius: 8px; padding: 12px; font-family: 'Kanit'; font-weight: 600; cursor: pointer;">ส่งแจ้งแอดมิน</button>
@@ -257,7 +277,7 @@
     let currentDisplayName = "";
     let selectedBetType = "";
     let playMode = "private"; // ตั้งค่า Default เริ่มต้นเป็นเล่นส่วนตัว
-    let userTableNo = "7"; 
+    let userTableNo = ""; 
     
     let currentUserStatus = "Inactive";
     let memberId = "";
@@ -537,9 +557,21 @@
       document.getElementById('txtTopupAmount').value = '';
     }
 
+    function toggleWithdrawOptions() {
+      const type = document.getElementById('selTransactionType').value;
+      if (type === 'ถอนเงิน') {
+        document.getElementById('withdrawOptionsSection').style.display = 'block';
+      } else {
+        document.getElementById('withdrawOptionsSection').style.display = 'none';
+      }
+    }
+
+    // อัปเดตฟังก์ชัน submitTopupRequest เดิม เป็นโค้ดนี้:
     async function submitTopupRequest() {
+      const type = document.getElementById('selTransactionType').value;
       const amount = document.getElementById('txtTopupAmount').value;
       const method = document.getElementById('selTopupMethod').value;
+      const feeOption = document.getElementById('selWithdrawFee').value;
       
       if (!amount || amount <= 0) {
         alert("กรุณาระบุจำนวนเงินให้ถูกต้อง");
@@ -550,8 +582,10 @@
         action: 'requestTopup',
         uid: currentLineUserId, 
         displayName: currentDisplayName,
+        type: type, // บอกว่าเป็น ฝาก หรือ ถอน
         amount: parseFloat(amount),
-        method: method
+        method: method,
+        feeOption: (type === 'ถอนเงิน') ? feeOption : '-'
       };
 
       try {
@@ -563,7 +597,7 @@
         const res = await response.json();
         
         if(res.status === 'success') {
-          alert("แจ้งเรื่องสำเร็จ! แอดมินกำลังดำเนินการเติมเครดิตให้ครับ");
+          alert(`แจ้งเรื่อง ${type} สำเร็จ! แอดมินกำลังดำเนินการให้ครับ`);
           closeTopupModal();
         } else {
           alert("เกิดข้อผิดพลาด: " + res.message);
