@@ -243,12 +243,13 @@
           currentOpId = profile.userId;
           await checkAdminAccess(currentOpId);
         } else {
-          // แจ้งระบบว่า ถ้าล็อกอินเสร็จ ให้กลับมาที่หน้า admin.html (ไม่ต้องไปหน้าผู้เล่น)
+          // แจ้งระบบว่า ถ้าล็อกอินเสร็จ ให้กลับมาที่หน้า admin.html
           liff.login({ redirectUri: window.location.href });
         }
       } catch (e) {
         document.getElementById('opProfile').innerText = "LIFF Error";
-        alert("LIFF Error: ไม่สามารถเชื่อมต่อ LINE ได้");
+        // เปลี่ยนตรงนี้ให้โชว์ข้อความ Error ของระบบจริงๆ ออกมา
+        alert("LIFF Error รหัส: " + e.message + "\n\nโปรดเช็ค LIFF ID ใน config.js ครับ");
       }
     }
 
