@@ -86,6 +86,43 @@
     </div>
 
     <!-- ==========================================
+         หน้ารายงานสรุปผลรายวัน (Daily P&L Report)
+         ========================================== -->
+    <div class="card">
+      <div class="card-title" style="color: var(--green-main);"><i class="fa-solid fa-chart-line"></i> รายงานสรุปผลรายวัน (P&L Report)</div>
+      
+      <button class="btn btn-blue" style="width: 100%; margin-bottom: 15px;" onclick="loadDailyReport()">
+        <i class="fa-solid fa-rotate"></i> โหลด / อัปเดตรายงานวันนี้
+      </button>
+
+      <!-- กล่องสรุปภาพรวม -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+        <div style="background: #0f111a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">ยอดแทงรวม (Gross)</div>
+          <div id="repGrossBet" style="font-size: 1.2rem; font-weight: bold; color: white;">฿0</div>
+        </div>
+        <div style="background: #0f111a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">จ่ายคืนลูกค้า (Payout)</div>
+          <div id="repPayout" style="font-size: 1.2rem; font-weight: bold; color: var(--red-main);">฿0</div>
+        </div>
+        <div style="background: #0f111a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">ยกเลิกบิล</div>
+          <div id="repCancelled" style="font-size: 1.2rem; font-weight: bold; color: var(--text-muted);">฿0</div>
+        </div>
+        <div style="background: #0f111a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">กำไรสุทธิบ่อ (Net Profit)</div>
+          <div id="repNetProfit" style="font-size: 1.2rem; font-weight: bold; color: var(--green-main);">฿0</div>
+        </div>
+      </div>
+
+      <!-- ตารางแสดงผลรายรอบ -->
+      <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">รายละเอียดกำไร/ขาดทุนรายรอบวันนี้</div>
+      <div id="roundReportList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+        <div style="text-align: center; color: var(--text-muted); padding: 15px;">กดปุ่มด้านบนเพื่อโหลดรายงาน</div>
+      </div>
+    </div>
+
+    <!-- ==========================================
          การจัดการเครดิต
          ========================================== -->
     <div class="card">
@@ -162,6 +199,9 @@
       // ดึงสถานะรอบล่าสุดมาแสดง
       fetchAdminDashboard();
       setInterval(fetchAdminDashboard, 3000);
+      
+      // โหลดรายงาน P&L เริ่มต้นตอนเปิดหน้าเว็บ
+      loadDailyReport();
     }
 
     async function fetchAdminDashboard() {
@@ -194,6 +234,61 @@
     }
 
     // ==========================================
+    // ฟังก์ชันรายงานสรุปผลรายวัน (Daily P&L Report)
+    // ==========================================
+    async function loadDailyReport() {
+      const listDiv = document.getElementById('roundReportList');
+      listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">กำลังโหลดรายงาน...</div>';
+
+      try {
+        const url = `${APP_CONFIG.GAS_URL}?action=getDailyReport`;
+        const response = await fetch(url);
+        const res = await response.json();
+
+        if (res.status === 'success') {
+          // แสดงตัวเลขสรุปภาพรวม
+          document.getElementById('repGrossBet').innerText = `฿${res.summary.grossBet.toLocaleString()}`;
+          document.getElementById('repPayout').innerText = `-฿${res.summary.payout.toLocaleString()}`;
+          document.getElementById('repCancelled').innerText = `฿${res.summary.cancelled.toLocaleString()}`;
+          
+          let netProfitEl = document.getElementById('repNetProfit');
+          netProfitEl.innerText = `฿${res.summary.netProfit.toLocaleString()}`;
+          netProfitEl.style.color = res.summary.netProfit >= 0 ? 'var(--green-main)' : 'var(--red-main)';
+
+          // แสดงรายการรายรอบ
+          listDiv.innerHTML = '';
+          if (res.rounds.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">ยังไม่มีข้อมูลการเล่นในวันนี้</div>';
+            return;
+          }
+
+          res.rounds.forEach(r => {
+            let profitColor = r.netProfit >= 0 ? 'var(--green-main)' : 'var(--red-main)';
+            let card = document.createElement('div');
+            card.style.cssText = "background: #0f111a; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;";
+            
+            card.innerHTML = `
+              <div>
+                <div style="font-weight: 600; font-size: 0.95rem;">${r.roundId} <span style="font-size: 0.75rem; color: var(--text-muted);">(${r.weight}g - ${r.result})</span></div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">แทง: ฿${r.totalBet.toLocaleString()} | จ่าย: ฿${r.totalPayout.toLocaleString()}</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-weight: bold; font-size: 1rem; color: ${profitColor};">฿${r.netProfit.toLocaleString()}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${r.roundStatus}</div>
+              </div>
+            `;
+            listDiv.appendChild(card);
+          });
+
+        } else {
+          listDiv.innerHTML = `<div style="text-align:center; color: var(--red-main); padding: 15px;">${res.message}</div>`;
+        }
+      } catch (e) {
+        listDiv.innerHTML = '<div style="text-align:center; color: var(--red-main); padding: 15px;">เกิดข้อผิดพลาดในการเชื่อมต่อ</div>';
+      }
+    }
+
+    // ==========================================
     // ฟังก์ชันควบคุมรอบ (เปิดรอบ / ปิดรับแทง / ตัดผล)
     // ==========================================
     async function controlRound(actionCmd) {
@@ -206,6 +301,7 @@
         if(res.status === 'success') {
           alert(res.message);
           fetchAdminDashboard();
+          loadDailyReport(); // โหลดรายงานใหม่เมื่อมีการเปลี่ยนสถานะรอบ
         } else {
           alert(res.message);
         }
@@ -231,6 +327,7 @@
           alert(res.message);
           document.getElementById('txtShrimpWeight').value = '';
           fetchAdminDashboard();
+          loadDailyReport(); // อัปเดตรายงาน P&L ทันทีหลังตัดผล
         } else {
           alert(res.message);
         }
@@ -276,7 +373,6 @@
     }
 
     async function setUserStatus(status) {
-      // ดึงค่าและลบช่องว่างหัวท้ายออกด้วย .trim() เผื่อแอดมินเผลอเคาะสเปซบาร์
       let targetId = document.getElementById('txtTargetUserUid').value.trim(); 
       if(!targetId) {
         alert("กรุณาระบุรหัสสมาชิก (เช่น M0001) ของลูกค้าก่อนครับ");
@@ -288,7 +384,7 @@
 
       const payload = {
         action: 'updateUserStatus',
-        targetId: targetId, // ส่งรหัสกลับไปหา GAS
+        targetId: targetId, 
         newStatus: status
       };
 
@@ -314,6 +410,7 @@
       if(res.status === 'success') {
         alert(res.message);
         document.getElementById('txtBetId').value = "";
+        loadDailyReport(); // อัปเดตยอดรายงานหลังยกเลิกบิล
       } else { alert(res.message); }
     }
 
