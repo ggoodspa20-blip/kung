@@ -425,6 +425,10 @@
           if (data.weight && data.weight !== '-') {
             document.getElementById('prevWeight').innerText = `${data.weight} กรัม`;
             document.getElementById('prevResultBadge').innerText = `${data.result} ชนะ`;
+          } else {
+            // กรณีที่เพิ่งเริ่มบิลแรกของวัน หรือยังไม่มีรอบจบ
+            document.getElementById('prevWeight').innerText = `รอข้อมูล...`;
+            document.getElementById('prevResultBadge').innerText = `-`;
           }
         }
       } catch (error) {
