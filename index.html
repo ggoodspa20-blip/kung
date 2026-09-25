@@ -155,7 +155,7 @@
         </select>
       </div>
 
-      <!-- ส่วนตัวเลือกค่าน้ำ (จะแสดงเมื่อเลือก "ถอนเงิน") -->
+      <!-- ส่วนตัวเลือกค่าน้ำ -->
       <div style="margin-bottom: 20px; display: none;" id="withdrawOptionsSection">
         <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">เงื่อนไขการถอน</label>
         <select id="selWithdrawFee" style="width: 100%; box-sizing: border-box; background: #0f111a; border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 8px; font-family: 'Kanit'; font-size: 1rem; outline: none;">
@@ -363,15 +363,23 @@
         if (res.status === 'success') {
           
           // ==========================================
-          // ระบบ Redirect อัตโนมัติ (แยกแอดมิน / ลูกค้า)
+          // ระบบ Redirect อัตโนมัติ (บังคับเปลี่ยนหน้า)
           // ==========================================
-          if (res.role === 'Superadmin' || res.role === 'Admin' || res.role === 'Operator') {
-             // ถ้าเป็นพนักงานหรือเจ้าของ ให้เด้งไปหน้า Admin Panel ทันที
-             window.location.replace("admin.html");
-             return; 
+          let userRole = res.role ? res.role.trim() : 'Customer';
+          
+          if (userRole === 'Superadmin' || userRole === 'Admin' || userRole === 'Operator') {
+             // เปลี่ยนข้อความบนจอให้รู้ว่าระบบกำลังทำงาน
+             document.getElementById('tableDisplay').innerText = "กำลังเข้าสู่หน้าแอดมิน...";
+             
+             // สั่งบังคับเปลี่ยนหน้าเว็บไปที่ admin.html
+             window.location.href = "admin.html";
+             
+             // ระบบสำรอง (Fallback) เผื่อมือถือบางรุ่นไม่ยอมรันคำสั่งด้านบน
+             setTimeout(() => { window.location.assign("admin.html"); }, 800);
+             return; // หยุดทำงานโค้ดฝั่งลูกค้า
           }
 
-          // ถ้าเป็นลูกค้าทั่วไป ให้รันคำสั่งด้านล่างต่อ
+          // สำหรับ Customer ให้ทำงานต่อตามปกติ
           memberId = res.memberId;
           currentUserStatus = res.userStatus; 
           
@@ -394,12 +402,11 @@
             document.getElementById('bottomNavMenu').style.display = 'none'; 
           }
         } else {
-          // หากเกิด Error จากฝั่งหลังบ้าน (เช่น หาสคริปต์ไม่เจอ หรือ Code.gs มีปัญหา)
           alert("แจ้งเตือนจากระบบหลังบ้าน: " + res.message);
           document.getElementById('tableDisplay').innerText = "โหลดข้อมูลไม่สำเร็จ";
         }
       } catch (error) {
-        alert("Error การเชื่อมต่อ (Failed to fetch): ไม่สามารถติดต่อฐานข้อมูลได้ โปรดตรวจสอบการตั้งค่า Deploy");
+        alert("Error การเชื่อมต่อ: ไม่สามารถติดต่อฐานข้อมูลได้ โปรดเช็คการตั้งค่า Deploy ของคุณ");
         document.getElementById('tableDisplay').innerText = "เชื่อมต่อล้มเหลว";
       }
     }
@@ -447,7 +454,6 @@
       }
     }
 
-    // ฟังก์ชันนับเวลาถอยหลัง (1 วินาที)
     function startCountdownTimer() {
       if(timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
