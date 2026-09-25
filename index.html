@@ -42,18 +42,38 @@
     .mode-btn { flex: 1; text-align: center; padding: 10px 0; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.3s ease; }
     .mode-btn.active { background: #2a2d3d; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-    /* Round Info & Live Board */
+    /* Round Info & Live Board (อัปเดตใหม่) */
     .round-info { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-    .round-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .round-id { font-size: 1.1rem; font-weight: 600; }
+    .round-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;}
+    .round-id { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;}
     .round-status { font-size: 0.8rem; color: var(--text-muted); }
-    .live-badge { background: rgba(245, 158, 11, 0.2); color: var(--yellow-text); padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+    .live-badge { background: rgba(16, 185, 129, 0.2); color: var(--green-text); padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px;}
+    
+    .timer-box { text-align: right; }
+    .timer-label { font-size: 0.7rem; color: var(--text-muted); }
+    .timer-value { font-size: 1.4rem; font-weight: bold; color: var(--yellow-main); font-family: monospace; }
     
     /* Live Stats Grid */
-    .live-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px dashed var(--card-border); padding-top: 10px; }
-    .stat-box { background: #0f111a; padding: 8px 12px; border-radius: 8px; text-align: center; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); }
-    .stat-val { font-size: 1rem; font-weight: bold; }
+    .live-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { padding: 15px 12px; border-radius: 12px; text-align: left; position: relative;}
+    .stat-box.even-box { background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); }
+    .stat-box.odd-box { background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); }
+    
+    .stat-label { font-size: 0.8rem; font-weight: bold; margin-bottom: 5px;}
+    .even-box .stat-label { color: var(--blue-main); }
+    .odd-box .stat-label { color: var(--red-main); }
+    
+    .stat-val { font-size: 1.5rem; font-weight: bold; color: white; margin-bottom: 5px; }
+    .stat-count { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;}
+    
+    .progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .even-box .progress-bar { background: var(--blue-main); }
+    .odd-box .progress-bar { background: var(--red-main); }
+
+    .total-bet-box { background: #0f111a; border-radius: 8px; padding: 12px 15px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--card-border);}
+    .total-bet-label { font-size: 0.85rem; color: var(--text-muted); }
+    .total-bet-val { font-size: 1.1rem; font-weight: bold; color: var(--green-text); }
 
     /* Betting Buttons */
     .bet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
@@ -167,7 +187,7 @@
         <div class="label">เครดิตคงเหลือ</div>
         <div class="value val-green" id="creditDisplay">฿0</div>
         <button onclick="openTopupModal()" style="margin-top: 5px; background: var(--blue-main); border: none; color: white; border-radius: 6px; padding: 4px; font-size: 0.75rem; font-family: 'Kanit'; cursor: pointer;">
-          <i class="fa-solid fa-plus"></i> แจ้งเติมเครดิต
+          <i class="fa-solid fa-plus"></i> แจ้งทำรายการ
         </button>
       </div>
     </div>
@@ -185,35 +205,46 @@
     <!-- VIEW 1: หน้าสำหรับแทง (Betting View) -->
     <div id="bettingView" class="hidden">
       
-      <!-- ตั้งค่า Default เป็น เล่นส่วนตัว -->
       <div class="mode-selector">
         <div class="mode-btn" id="modeTable" onclick="setMode('table')">เล่นแบบลงโต๊ะ</div>
         <div class="mode-btn active" id="modePrivate" onclick="setMode('private')">เล่นส่วนตัว</div>
       </div>
 
-      <!-- Round Info & Live Board Summary -->
+      <!-- Round Info & Live Board Summary (อัปเดตมีเวลาถอยหลังและบาร์เปอร์เซ็นต์) -->
       <div class="round-info">
         <div class="round-header">
           <div>
-            <div class="round-id" id="roundIdDisplay">รอบ โหลด...</div>
+            <div class="round-id" id="roundIdDisplay">รอบ โหลด... <span class="live-badge">● LIVE</span></div>
             <div class="round-status" id="statusDisplay">สถานะ: -</div>
           </div>
-          <div class="live-badge">LIVE</div>
+          <div class="timer-box">
+            <div class="timer-label">เหลือเวลา</div>
+            <div class="timer-value" id="countdownTimer">--:--</div>
+          </div>
         </div>
         
-        <!-- ส่วนแสดงยอดแทงสดแยกฝั่ง คู่ / คี่ -->
         <div class="live-stats">
-          <div class="stat-box">
-            <div class="stat-label">🔵 "คู่" (EVEN)</div>
-            <div class="stat-val" id="liveEvenDisplay" style="color: var(--blue-main);">฿0</div>
+          <div class="stat-box even-box">
+            <div class="stat-label">คู่ • EVEN</div>
+            <div class="stat-val" id="liveEvenDisplay">฿0</div>
+            <div class="stat-count" id="countEvenDisplay">0 โต๊ะ</div>
+            <div class="progress-bg"><div class="progress-bar" id="barEven" style="width: 0%;"></div></div>
           </div>
-          <div class="stat-box">
-            <div class="stat-label">🔴 "คี่" (ODD)</div>
-            <div class="stat-val" id="liveOddDisplay" style="color: var(--red-main);">฿0</div>
+          <div class="stat-box odd-box">
+            <div class="stat-label">คี่ • ODD</div>
+            <div class="stat-val" id="liveOddDisplay">฿0</div>
+            <div class="stat-count" id="countOddDisplay">0 โต๊ะ</div>
+            <div class="progress-bg"><div class="progress-bar" id="barOdd" style="width: 0%;"></div></div>
           </div>
+        </div>
+
+        <div class="total-bet-box">
+          <div class="total-bet-label">ยอดเดิมพันรวมในบ่อ</div>
+          <div class="total-bet-val" id="liveTotalDisplay">฿0</div>
         </div>
       </div>
 
+      <!-- ปุ่มกดแทง -->
       <div class="bet-grid">
         <div class="bet-btn even" id="btnEven" onclick="selectBet('คู่')">
           <div class="thai-text">คู่</div>
@@ -232,6 +263,7 @@
 
       <button class="btn-submit" onclick="submitBet()">ยืนยันการแทง</button>
 
+      <!-- ผลรอบก่อนหน้า -->
       <div class="prev-result">
         <div class="prev-result-left">
           <i class="fa-solid fa-scale-balanced"></i>
@@ -276,11 +308,14 @@
     let currentLineUserId = "";
     let currentDisplayName = "";
     let selectedBetType = "";
-    let playMode = "private"; // ตั้งค่า Default เริ่มต้นเป็นเล่นส่วนตัว
+    let playMode = "private"; 
     let userTableNo = ""; 
     
     let currentUserStatus = "Inactive";
     let memberId = "";
+    
+    let targetEndTimeMs = null; 
+    let timerInterval = null;
 
     async function initializeApp() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -306,6 +341,8 @@
       } catch (err) {
         console.error("LIFF Error:", err);
       }
+      
+      startCountdownTimer();
     }
 
     async function authenticateUser(profile) {
@@ -318,9 +355,7 @@
 
       try {
         const response = await fetch(APP_CONFIG.GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         const res = await response.json();
         
@@ -330,7 +365,6 @@
           
           document.getElementById('memberIdDisplay').innerText = memberId;
           document.getElementById('pendingMemberId').innerText = memberId;
-          // ตั้งค่าเริ่มต้นการแสดงผลช่องเครดิตและชื่อตามโหมด private
           document.getElementById('tableDisplay').innerText = currentDisplayName || "บัญชีส่วนตัว";
           document.getElementById('creditDisplay').innerText = `฿${res.credit.toLocaleString()}`;
 
@@ -349,8 +383,8 @@
           }
         }
       } catch (error) {
-  alert("Error หลังบ้าน: " + error.message);
-}
+        alert("Error หลังบ้าน: " + error.message);
+      }
     }
 
     function setMode(mode) {
@@ -360,7 +394,7 @@
       
       if(mode === 'table') {
         document.getElementById('modeTable').classList.add('active');
-        document.getElementById('tableDisplay').innerText = `โต๊ะ ${userTableNo}`;
+        document.getElementById('tableDisplay').innerText = userTableNo ? `โต๊ะ ${userTableNo}` : "ไม่มีเบอร์โต๊ะ (โปรดสแกน QR)";
       } else {
         document.getElementById('modePrivate').classList.add('active');
         document.getElementById('tableDisplay').innerText = currentDisplayName || "บัญชีส่วนตัว";
@@ -396,6 +430,34 @@
       }
     }
 
+    // ฟังก์ชันนับเวลาถอยหลัง (1 วินาที)
+    function startCountdownTimer() {
+      if(timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        let display = document.getElementById('countdownTimer');
+        let statusText = document.getElementById('statusDisplay').innerText;
+        
+        if (statusText !== 'เปิดรับแทง' || !targetEndTimeMs) {
+          display.innerText = "--:--";
+          display.style.color = "var(--text-muted)";
+          return;
+        }
+
+        let now = new Date().getTime();
+        let distance = targetEndTimeMs - now;
+
+        if (distance <= 0) {
+          display.innerText = "00:00";
+          display.style.color = "var(--red-main)";
+        } else {
+          let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+          display.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          display.style.color = "var(--yellow-main)";
+        }
+      }, 1000);
+    }
+
     async function fetchDashboard() {
       if (currentUserStatus !== 'Active') return; 
 
@@ -405,28 +467,39 @@
         const data = await response.json();
         
         if(data && data.status !== 'error') {
-          document.getElementById('roundIdDisplay').innerText = `รอบ ${data.roundId}`;
+          document.getElementById('roundIdDisplay').innerHTML = `${data.roundId} <span class="live-badge">● LIVE</span>`;
           document.getElementById('statusDisplay').innerText = data.status === 'Open' ? 'เปิดรับแทง' : 'ปิดรับแทง';
           
-          // อัปเดตเครดิตตามโหมดที่เลือกอยู่ปัจจุบัน
           if (playMode === 'private') {
             document.getElementById('creditDisplay').innerText = `฿${data.userCredit.toLocaleString()}`;
           } else {
             document.getElementById('creditDisplay').innerText = `฿${data.tableCredit.toLocaleString()}`;
           }
 
-          // แสดงยอดแทงสด (Live Summary) แยกฝั่ง คู่/คี่
           if (data.liveSummary) {
-            document.getElementById('liveEvenDisplay').innerText = `฿${data.liveSummary.even.toLocaleString()}`;
-            document.getElementById('liveOddDisplay').innerText = `฿${data.liveSummary.odd.toLocaleString()}`;
+            let evenAmt = data.liveSummary.even || 0;
+            let oddAmt = data.liveSummary.odd || 0;
+            let totalAmt = data.liveSummary.total || 0;
+            
+            document.getElementById('liveEvenDisplay').innerText = `฿${evenAmt.toLocaleString()}`;
+            document.getElementById('liveOddDisplay').innerText = `฿${oddAmt.toLocaleString()}`;
+            document.getElementById('liveTotalDisplay').innerText = `฿${totalAmt.toLocaleString()}`;
+            
+            document.getElementById('countEvenDisplay').innerText = `${data.liveSummary.evenCount || 0} โต๊ะ/บิล`;
+            document.getElementById('countOddDisplay').innerText = `${data.liveSummary.oddCount || 0} โต๊ะ/บิล`;
+
+            let evenPct = totalAmt > 0 ? (evenAmt / totalAmt) * 100 : 0;
+            let oddPct = totalAmt > 0 ? (oddAmt / totalAmt) * 100 : 0;
+            document.getElementById('barEven').style.width = `${evenPct}%`;
+            document.getElementById('barOdd').style.width = `${oddPct}%`;
+
+            targetEndTimeMs = data.liveSummary.endTimeMs;
           }
 
-          // แสดงผลรอบก่อนหน้า
           if (data.weight && data.weight !== '-') {
             document.getElementById('prevWeight').innerText = `${data.weight} กรัม`;
             document.getElementById('prevResultBadge').innerText = `${data.result} ชนะ`;
           } else {
-            // กรณีที่เพิ่งเริ่มบิลแรกของวัน หรือยังไม่มีรอบจบ
             document.getElementById('prevWeight').innerText = `รอข้อมูล...`;
             document.getElementById('prevResultBadge').innerText = `-`;
           }
@@ -440,23 +513,22 @@
       const amount = document.getElementById('txtAmount').value;
       if(!selectedBetType) { alert("กรุณาเลือก คู่ หรือ คี่"); return; }
       if(!amount || amount <= 0) { alert("กรุณาระบุยอดแทง"); return; }
+      
+      if(playMode === 'table' && !userTableNo) {
+        alert("คุณยังไม่ได้สแกน QR Code ของโต๊ะ กรุณาเลือก 'เล่นส่วนตัว' หรือสแกน QR โต๊ะใหม่ครับ");
+        return;
+      }
 
       document.querySelector('.btn-submit').innerText = "กำลังดำเนินการ...";
       
       const payload = {
-        action: 'placeBet',
-        uid: currentLineUserId,
-        tableNo: userTableNo,
-        playMode: playMode, 
-        betType: selectedBetType,
-        amount: parseFloat(amount)
+        action: 'placeBet', uid: currentLineUserId, tableNo: userTableNo,
+        playMode: playMode, betType: selectedBetType, amount: parseFloat(amount)
       };
 
       try {
         const response = await fetch(APP_CONFIG.GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         const res = await response.json();
         
@@ -487,15 +559,11 @@
         
         if (res.status === 'success') {
           listDiv.innerHTML = '';
-          if (res.data.length === 0) {
-            listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;">ยังไม่มีประวัติการแทง</div>';
-            return;
-          }
+          if (res.data.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#94a3b8; padding: 20px;">ยังไม่มีประวัติการแทง</div>'; return; }
           
           res.data.forEach(item => {
             let typeClass = item.betType === 'คู่' ? 'even' : 'odd';
-            let statusHtml = '';
-            let cancelBtnHtml = '';
+            let statusHtml = ''; let cancelBtnHtml = '';
             
             if (item.status === 'Active') {
               statusHtml = `<span class="badge-status st-active">รอผล</span>`;
@@ -525,14 +593,11 @@
             listDiv.appendChild(card);
           });
         }
-      } catch (error) {
-        listDiv.innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
-      }
+      } catch (error) { listDiv.innerHTML = '<div style="color:red; text-align:center;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>'; }
     }
 
     async function userCancelBet(betId) {
       if(!confirm("คุณต้องการยกเลิกบิลนี้ และรับเครดิตคืนใช่หรือไม่?")) return;
-      
       const payload = { action: 'cancelBet', betId: betId, uid: currentLineUserId };
       try {
         const response = await fetch(APP_CONFIG.GAS_URL, {
@@ -541,9 +606,7 @@
         const res = await response.json();
         
         if(res.status === 'success') {
-          alert("ยกเลิกบิลและคืนเครดิตสำเร็จ");
-          loadHistory(); 
-          fetchDashboard(); 
+          alert("ยกเลิกบิลและคืนเครดิตสำเร็จ"); loadHistory(); fetchDashboard(); 
         } else { alert(res.message); }
       } catch (error) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
     }
@@ -570,45 +633,31 @@
       }
     }
 
-    // อัปเดตฟังก์ชัน submitTopupRequest เดิม เป็นโค้ดนี้:
     async function submitTopupRequest() {
       const type = document.getElementById('selTransactionType').value;
       const amount = document.getElementById('txtTopupAmount').value;
       const method = document.getElementById('selTopupMethod').value;
       const feeOption = document.getElementById('selWithdrawFee').value;
       
-      if (!amount || amount <= 0) {
-        alert("กรุณาระบุจำนวนเงินให้ถูกต้อง");
-        return;
-      }
+      if (!amount || amount <= 0) { alert("กรุณาระบุจำนวนเงินให้ถูกต้อง"); return; }
 
       const payload = {
-        action: 'requestTopup',
-        uid: currentLineUserId, 
-        displayName: currentDisplayName,
-        type: type, // บอกว่าเป็น ฝาก หรือ ถอน
-        amount: parseFloat(amount),
-        method: method,
+        action: 'requestTopup', uid: currentLineUserId, displayName: currentDisplayName,
+        type: type, amount: parseFloat(amount), method: method,
         feeOption: (type === 'ถอนเงิน') ? feeOption : '-'
       };
 
       try {
         const response = await fetch(APP_CONFIG.GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         const res = await response.json();
         
         if(res.status === 'success') {
           alert(`แจ้งเรื่อง ${type} สำเร็จ! แอดมินกำลังดำเนินการให้ครับ`);
           closeTopupModal();
-        } else {
-          alert("เกิดข้อผิดพลาด: " + res.message);
-        }
-      } catch (error) {
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-      }
+        } else { alert("เกิดข้อผิดพลาด: " + res.message); }
+      } catch (error) { alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'); }
     }
 
     initializeApp();
