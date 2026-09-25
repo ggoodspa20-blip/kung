@@ -49,9 +49,29 @@
     .switch-mode { display: flex; background: #0f111a; border-radius: 8px; padding: 4px; margin-bottom: 15px;}
     .switch-btn { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-radius: 6px; font-size: 0.9rem; color: var(--text-muted);}
     .switch-btn.active { background: #2a2d3d; color: white; }
+    
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
+
+  <!-- ==========================================
+       Modal: แสดง QR Code ประจำโต๊ะ
+       ========================================== -->
+  <div id="qrModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; width: 100%; max-width: 350px; text-align: center; position: relative;">
+      <h3 style="margin-top: 0; color: var(--blue-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">QR Code โต๊ะ <span id="qrTableNoDisplay"></span></h3>
+      
+      <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
+        <!-- ใช้ API สร้าง QR Code อัตโนมัติ -->
+        <img id="qrImage" src="" alt="QR Code" style="width: 200px; height: 200px;">
+      </div>
+      
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">ให้ลูกค้าสแกน QR นี้เพื่อเข้าแอปและผูกบัญชีเข้ากับโต๊ะนี้โดยอัตโนมัติ (สามารถ Save รูปลงเครื่องเพื่อไปปรินต์ได้)</p>
+      
+      <button onclick="closeQrModal()" class="btn btn-blue" style="width: 100%;">ปิดหน้าต่าง</button>
+    </div>
+  </div>
 
   <div class="container">
     <div class="header">
@@ -95,7 +115,6 @@
         <i class="fa-solid fa-rotate"></i> โหลด / อัปเดตรายงานวันนี้
       </button>
 
-      <!-- กล่องสรุปภาพรวม -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
         <div style="background: #0f111a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
           <div style="font-size: 0.8rem; color: var(--text-muted);">ยอดแทงรวม (Gross)</div>
@@ -115,10 +134,27 @@
         </div>
       </div>
 
-      <!-- ตารางแสดงผลรายรอบ -->
       <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">รายละเอียดกำไร/ขาดทุนรายรอบวันนี้</div>
       <div id="roundReportList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
         <div style="text-align: center; color: var(--text-muted); padding: 15px;">กดปุ่มด้านบนเพื่อโหลดรายงาน</div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         การจัดการโต๊ะ & สร้าง QR Code (ใหม่)
+         ========================================== -->
+    <div class="card">
+      <div class="card-title" style="color: var(--blue-main);"><i class="fa-solid fa-qrcode"></i> จัดการโต๊ะ & สแกนเข้าเล่น</div>
+      
+      <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <input type="text" id="txtNewTable" class="form-control" placeholder="ระบุเบอร์โต๊ะใหม่ (เช่น 8)" style="flex: 2;">
+        <button class="btn btn-green" style="flex: 1;" onclick="addNewTable()"><i class="fa-solid fa-plus"></i> เพิ่มโต๊ะ</button>
+      </div>
+
+      <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">รายชื่อโต๊ะทั้งหมด</div>
+      <!-- รายชื่อโต๊ะจะถูกดึงมาแสดงตรงนี้ -->
+      <div id="tableListContainer" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+        <div style="text-align: center; color: var(--text-muted); padding: 15px;">กำลังโหลดข้อมูล...</div>
       </div>
     </div>
 
@@ -199,7 +235,6 @@
       <div class="form-group">
         <label>รหัสบิล (Bet ID)</label>
         <input type="text" id="txtBetId" class="form-control" placeholder="เช่น B1700000000000">
-        <small style="color: var(--text-muted); display: block; margin-top: 5px;">*ยกเลิกได้เฉพาะรอบที่ยังเปิดรับแทงอยู่เท่านั้น</small>
       </div>
       <button class="btn btn-red" style="width: 100%;" onclick="cancelBet()"><i class="fa-solid fa-trash-can"></i> ยกเลิกและคืนเครดิต</button>
     </div>
@@ -222,13 +257,12 @@
         console.log("Running in browser mode");
       }
       
-      // ดึงสถานะรอบล่าสุดมาแสดง
+      // เรียกโหลดข้อมูลตอนเปิดหน้าแอดมิน
       fetchAdminDashboard();
       setInterval(fetchAdminDashboard, 3000);
-      
-      // โหลดรายงาน P&L และค่าตั้งค่าระบบตอนเปิดหน้าเว็บ
       loadDailyReport();
       loadSettings();
+      loadTableList(); // โหลดรายชื่อโต๊ะทั้งหมด
     }
 
     async function fetchAdminDashboard() {
@@ -238,12 +272,10 @@
         const data = await response.json();
         if(data && data.roundId) {
           document.getElementById('adminRoundId').innerText = data.roundId;
-          
           let statusText = '';
           if (data.status === 'Open') statusText = '🟢 เปิดรับแทง';
           else if (data.status === 'Closed') statusText = '🔴 ปิดรับแทง (รอชั่งกุ้ง)';
           else statusText = '⚫ จบรอบแล้ว';
-          
           document.getElementById('adminRoundStatus').innerText = statusText;
         }
       } catch (error) {
@@ -261,7 +293,73 @@
     }
 
     // ==========================================
-    // ฟังก์ชันจัดการการตั้งค่าระบบ (System Settings)
+    // ฟังก์ชันจัดการโต๊ะ & สร้าง QR Code
+    // ==========================================
+    async function loadTableList() {
+      const listDiv = document.getElementById('tableListContainer');
+      try {
+        const response = await fetch(`${APP_CONFIG.GAS_URL}?action=getTables`);
+        const res = await response.json();
+        
+        if (res.status === 'success') {
+          listDiv.innerHTML = '';
+          res.data.forEach(t => {
+            let card = document.createElement('div');
+            card.style.cssText = "background: #0f111a; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;";
+            
+            card.innerHTML = `
+              <div>
+                <div style="font-weight: 600; font-size: 1rem; color: white;">โต๊ะ ${t.tableNo}</div>
+                <div style="font-size: 0.8rem; color: var(--green-main);">เครดิตรวม: ฿${t.credit.toLocaleString()}</div>
+              </div>
+              <button class="btn btn-blue" style="padding: 6px 12px; font-size: 0.85rem; flex: none; width: auto;" onclick="showQrCode('${t.tableNo}')">
+                <i class="fa-solid fa-qrcode"></i> สร้าง QR
+              </button>
+            `;
+            listDiv.appendChild(card);
+          });
+        }
+      } catch(e) {
+        listDiv.innerHTML = '<div style="text-align:center; color: var(--red-main);">โหลดข้อมูลไม่ได้</div>';
+      }
+    }
+
+    async function addNewTable() {
+      let tNo = document.getElementById('txtNewTable').value.trim();
+      if(!tNo) { alert("กรุณาระบุหมายเลขโต๊ะ"); return; }
+      
+      document.querySelector('.btn-green i.fa-plus').parentElement.innerText = 'กำลังเพิ่ม...';
+      const res = await postDataToGAS({ action: 'addTable', tableNo: tNo, uid: currentOpId });
+      
+      if(res.status === 'success') {
+        alert(res.message);
+        document.getElementById('txtNewTable').value = '';
+        loadTableList(); // โหลดรายชื่อโต๊ะใหม่
+      } else {
+        alert(res.message);
+      }
+      document.querySelector('.btn-green:first-child').innerHTML = '<i class="fa-solid fa-plus"></i> เพิ่มโต๊ะ';
+    }
+
+    function showQrCode(tableNo) {
+      document.getElementById('qrTableNoDisplay').innerText = tableNo;
+      
+      // สร้าง URL ที่ฝังเบอร์โต๊ะ (TableNo) ไว้ข้างหลัง
+      let liffUrl = `https://liff.line.me/${APP_CONFIG.LIFF_ID}?table=${tableNo}`;
+      
+      // ใช้ API ของ qrserver.com ในการแปลง URL เป็นรูป QR Code
+      let qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(liffUrl)}`;
+      document.getElementById('qrImage').src = qrImgUrl;
+      
+      document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // ฟังก์ชันจัดการตั้งค่า
     // ==========================================
     async function loadSettings() {
       try {
@@ -272,57 +370,37 @@
           if (res.MinBet !== undefined) document.getElementById('settingMinBet').value = res.MinBet;
           if (res.MaxBet !== undefined) document.getElementById('settingMaxBet').value = res.MaxBet;
         }
-      } catch (e) {
-        console.error("Load Settings Error", e);
-      }
+      } catch (e) { console.error("Load Settings Error", e); }
     }
 
     async function saveSettings() {
       let waterMargin = document.getElementById('settingWaterMargin').value;
       let minBet = document.getElementById('settingMinBet').value;
       let maxBet = document.getElementById('settingMaxBet').value;
-
       if (!confirm("ยืนยันการบันทึกการเปลี่ยนแปลงค่าตั้งค่าระบบ?")) return;
-
       const payload = {
-        action: 'updateSettings',
-        uid: currentOpId,
-        settings: {
-          WaterMargin: parseFloat(waterMargin) || 0.05,
-          MinBet: parseFloat(minBet) || 20,
-          MaxBet: parseFloat(maxBet) || 5000
-        }
+        action: 'updateSettings', uid: currentOpId,
+        settings: { WaterMargin: parseFloat(waterMargin) || 0.05, MinBet: parseFloat(minBet) || 20, MaxBet: parseFloat(maxBet) || 5000 }
       };
-
       try {
         const res = await postDataToGAS(payload);
-        if (res.status === 'success') {
-          alert(res.message);
-        } else {
-          alert(res.message);
-        }
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-      }
+        alert(res.message);
+      } catch (error) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); }
     }
 
     // ==========================================
-    // ฟังก์ชันรายงานสรุปผลรายวัน (Daily P&L Report)
+    // ฟังก์ชันรายงานผล
     // ==========================================
     async function loadDailyReport() {
       const listDiv = document.getElementById('roundReportList');
       listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">กำลังโหลดรายงาน...</div>';
-
       try {
-        const url = `${APP_CONFIG.GAS_URL}?action=getDailyReport`;
-        const response = await fetch(url);
+        const response = await fetch(`${APP_CONFIG.GAS_URL}?action=getDailyReport`);
         const res = await response.json();
-
         if (res.status === 'success') {
           document.getElementById('repGrossBet').innerText = `฿${res.summary.grossBet.toLocaleString()}`;
           document.getElementById('repPayout').innerText = `-฿${res.summary.payout.toLocaleString()}`;
           document.getElementById('repCancelled').innerText = `฿${res.summary.cancelled.toLocaleString()}`;
-          
           let netProfitEl = document.getElementById('repNetProfit');
           netProfitEl.innerText = `฿${res.summary.netProfit.toLocaleString()}`;
           netProfitEl.style.color = res.summary.netProfit >= 0 ? 'var(--green-main)' : 'var(--red-main)';
@@ -332,12 +410,10 @@
             listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">ยังไม่มีข้อมูลการเล่นในวันนี้</div>';
             return;
           }
-
           res.rounds.forEach(r => {
             let profitColor = r.netProfit >= 0 ? 'var(--green-main)' : 'var(--red-main)';
             let card = document.createElement('div');
             card.style.cssText = "background: #0f111a; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;";
-            
             card.innerHTML = `
               <div>
                 <div style="font-weight: 600; font-size: 0.95rem;">${r.roundId} <span style="font-size: 0.75rem; color: var(--text-muted);">(${r.weight}g - ${r.result})</span></div>
@@ -350,73 +426,40 @@
             `;
             listDiv.appendChild(card);
           });
-
-        } else {
-          listDiv.innerHTML = `<div style="text-align:center; color: var(--red-main); padding: 15px;">${res.message}</div>`;
-        }
-      } catch (e) {
-        listDiv.innerHTML = '<div style="text-align:center; color: var(--red-main); padding: 15px;">เกิดข้อผิดพลาดในการเชื่อมต่อ</div>';
-      }
+        } else { listDiv.innerHTML = `<div style="text-align:center; color: var(--red-main); padding: 15px;">${res.message}</div>`; }
+      } catch (e) { listDiv.innerHTML = '<div style="text-align:center; color: var(--red-main); padding: 15px;">เกิดข้อผิดพลาด</div>'; }
     }
 
     // ==========================================
-    // ฟังก์ชันควบคุมรอบ (เปิดรอบ / ปิดรับแทง / ตัดผล)
+    // ฟังก์ชันควบคุมรอบ และอื่นๆ
     // ==========================================
     async function controlRound(actionCmd) {
       if (actionCmd === 'createRound' && !confirm('ยืนยันการเปิดรอบใหม่?')) return;
-      if (actionCmd === 'closeBetting' && !confirm('ยืนยันการปิดรับแทง?\n(ลูกค้าจะไม่สามารถกดยืนยันแทงหรือยกเลิกบิลได้)')) return;
-
-      const payload = { action: actionCmd, uid: currentOpId };
-      try {
-        const res = await postDataToGAS(payload);
-        if(res.status === 'success') {
-          alert(res.message);
-          fetchAdminDashboard();
-          loadDailyReport(); 
-        } else {
-          alert(res.message);
-        }
-      } catch (e) {
-        alert("เชื่อมต่อล้มเหลว");
-      }
+      if (actionCmd === 'closeBetting' && !confirm('ยืนยันการปิดรับแทง?')) return;
+      const res = await postDataToGAS({ action: actionCmd, uid: currentOpId });
+      alert(res.message);
+      if(res.status === 'success') { fetchAdminDashboard(); loadDailyReport(); }
     }
 
     async function submitFinalize() {
       const weight = document.getElementById('txtShrimpWeight').value;
-      if (!weight || weight <= 0) {
-        alert("กรุณากรอกน้ำหนักกุ้งที่ชั่งได้จริง");
-        return;
-      }
-      if (!confirm(`ยืนยันการตัดผลรอบนี้ที่น้ำหนัก ${weight} กรัม ใช่หรือไม่?\n(ระบบจะคำนวณเงินคืนให้ผู้ชนะทันที)`)) return;
+      if (!weight || weight <= 0) { alert("กรุณากรอกน้ำหนักกุ้ง"); return; }
+      if (!confirm(`ยืนยันการตัดผลรอบนี้ที่น้ำหนัก ${weight} กรัม ใช่หรือไม่?`)) return;
 
       document.querySelector('.btn-blue').innerText = 'กำลังประมวลผล...';
-      const payload = { action: 'finalizeRound', weight: parseFloat(weight), uid: currentOpId };
-      
-      try {
-        const res = await postDataToGAS(payload);
-        if(res.status === 'success') {
-          alert(res.message);
-          document.getElementById('txtShrimpWeight').value = '';
-          fetchAdminDashboard();
-          loadDailyReport(); 
-        } else {
-          alert(res.message);
-        }
-      } catch (e) {
-        alert("เชื่อมต่อล้มเหลว");
-      } finally {
-        document.querySelector('.btn-blue').innerHTML = '<i class="fa-solid fa-scale-balanced"></i> 3. ตัดผล';
+      const res = await postDataToGAS({ action: 'finalizeRound', weight: parseFloat(weight), uid: currentOpId });
+      alert(res.message);
+      if(res.status === 'success') {
+        document.getElementById('txtShrimpWeight').value = '';
+        fetchAdminDashboard(); loadDailyReport(); 
       }
+      document.querySelector('.btn-blue').innerHTML = '<i class="fa-solid fa-scale-balanced"></i> 3. ตัดผล';
     }
 
-    // ==========================================
-    // ฟังก์ชันการจัดการระบบอื่นๆ 
-    // ==========================================
     function setCreditMode(mode) {
       creditMode = mode;
       document.getElementById('creditModeTable').classList.remove('active');
       document.getElementById('creditModePrivate').classList.remove('active');
-      
       if(mode === 'table') {
         document.getElementById('creditModeTable').classList.add('active');
         document.getElementById('targetLabel').innerText = "หมายเลขโต๊ะ";
@@ -429,47 +472,26 @@
     async function processCredit(type) {
       let targetId = document.getElementById('txtTargetId').value;
       let amount = document.getElementById('txtAmount').value;
-
-      if(!targetId || !amount || amount <= 0) {
-        alert("กรุณากรอกข้อมูลให้ครบและถูกต้อง"); return;
-      }
+      if(!targetId || !amount || amount <= 0) { alert("กรุณากรอกข้อมูลให้ครบ"); return; }
       if(!confirm(`ยืนยันการ ${type === 'deposit' ? 'เติม' : 'ถอน'} เงิน ${amount} บาท?`)) return;
 
-      const payload = { action: 'manageCredit', targetId: targetId, type: type, amount: parseFloat(amount), isPrivate: (creditMode === 'private'), uid: currentOpId };
-      const res = await postDataToGAS(payload);
+      const res = await postDataToGAS({ action: 'manageCredit', targetId: targetId, type: type, amount: parseFloat(amount), isPrivate: (creditMode === 'private'), uid: currentOpId });
       if(res.status === 'success') {
         alert(`สำเร็จ! ยอดเงินคงเหลือ: ${res.newBalance} บาท`);
         document.getElementById('txtAmount').value = "";
+        loadTableList(); // โหลดรายชื่อโต๊ะใหม่เผื่อมีการเติมเงินเข้าโต๊ะ
       } else { alert(res.message); }
     }
 
     async function setUserStatus(status) {
       let targetId = document.getElementById('txtTargetUserUid').value.trim(); 
-      if(!targetId) {
-        alert("กรุณาระบุรหัสสมาชิก (เช่น M0001) ของลูกค้าก่อนครับ");
-        return;
-      }
-
-      let actionName = status === 'Active' ? 'อนุมัติ (เปิดระบบ)' : 'ระงับ (ปิดระบบ)';
+      if(!targetId) { alert("กรุณาระบุรหัสสมาชิก (เช่น M0001)"); return; }
+      let actionName = status === 'Active' ? 'อนุมัติ' : 'ระงับ';
       if(!confirm(`ยืนยันการ ${actionName} ให้รหัส ${targetId} ?`)) return;
 
-      const payload = {
-        action: 'updateUserStatus',
-        targetId: targetId, 
-        newStatus: status
-      };
-
-      try {
-        const res = await postDataToGAS(payload);
-        if(res.status === 'success') {
-          alert(res.message);
-          document.getElementById('txtTargetUserUid').value = ''; 
-        } else {
-          alert(res.message);
-        }
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-      }
+      const res = await postDataToGAS({ action: 'updateUserStatus', targetId: targetId, newStatus: status });
+      alert(res.message);
+      if(res.status === 'success') document.getElementById('txtTargetUserUid').value = ''; 
     }
 
     async function cancelBet() {
@@ -478,11 +500,11 @@
       if(!confirm("ยืนยันการยกเลิกบิลนี้ และคืนเครดิตให้ลูกค้า?")) return;
 
       const res = await postDataToGAS({ action: 'cancelBet', betId: betId, uid: currentOpId });
+      alert(res.message);
       if(res.status === 'success') {
-        alert(res.message);
         document.getElementById('txtBetId').value = "";
         loadDailyReport(); 
-      } else { alert(res.message); }
+      }
     }
 
     // เริ่มทำงาน
