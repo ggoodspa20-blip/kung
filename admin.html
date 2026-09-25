@@ -123,6 +123,32 @@
     </div>
 
     <!-- ==========================================
+         การตั้งค่าระบบ (System Settings)
+         ========================================== -->
+    <div class="card">
+      <div class="card-title" style="color: var(--blue-main);"><i class="fa-solid fa-gears"></i> ตั้งค่าระบบบ่อ</div>
+      
+      <div class="form-group">
+        <label>อัตราค่าน้ำ (Water Margin เช่น 0.05 คือ 5%)</label>
+        <input type="number" step="0.01" id="settingWaterMargin" class="form-control" placeholder="0.05">
+      </div>
+
+      <div class="form-group">
+        <label>ยอดแทงขั้นต่ำต่อบิล (บาท)</label>
+        <input type="number" id="settingMinBet" class="form-control" placeholder="20">
+      </div>
+
+      <div class="form-group">
+        <label>ยอดแทงสูงสุดต่อบิล (บาท)</label>
+        <input type="number" id="settingMaxBet" class="form-control" placeholder="5000">
+      </div>
+
+      <button class="btn btn-blue" style="width: 100%;" onclick="saveSettings()">
+        <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่าระบบ
+      </button>
+    </div>
+
+    <!-- ==========================================
          การจัดการเครดิต
          ========================================== -->
     <div class="card">
@@ -200,8 +226,9 @@
       fetchAdminDashboard();
       setInterval(fetchAdminDashboard, 3000);
       
-      // โหลดรายงาน P&L เริ่มต้นตอนเปิดหน้าเว็บ
+      // โหลดรายงาน P&L และค่าตั้งค่าระบบตอนเปิดหน้าเว็บ
       loadDailyReport();
+      loadSettings();
     }
 
     async function fetchAdminDashboard() {
@@ -234,6 +261,52 @@
     }
 
     // ==========================================
+    // ฟังก์ชันจัดการการตั้งค่าระบบ (System Settings)
+    // ==========================================
+    async function loadSettings() {
+      try {
+        const response = await fetch(`${APP_CONFIG.GAS_URL}?action=getSystemSettings`);
+        const res = await response.json();
+        if (res) {
+          if (res.WaterMargin !== undefined) document.getElementById('settingWaterMargin').value = res.WaterMargin;
+          if (res.MinBet !== undefined) document.getElementById('settingMinBet').value = res.MinBet;
+          if (res.MaxBet !== undefined) document.getElementById('settingMaxBet').value = res.MaxBet;
+        }
+      } catch (e) {
+        console.error("Load Settings Error", e);
+      }
+    }
+
+    async function saveSettings() {
+      let waterMargin = document.getElementById('settingWaterMargin').value;
+      let minBet = document.getElementById('settingMinBet').value;
+      let maxBet = document.getElementById('settingMaxBet').value;
+
+      if (!confirm("ยืนยันการบันทึกการเปลี่ยนแปลงค่าตั้งค่าระบบ?")) return;
+
+      const payload = {
+        action: 'updateSettings',
+        uid: currentOpId,
+        settings: {
+          WaterMargin: parseFloat(waterMargin) || 0.05,
+          MinBet: parseFloat(minBet) || 20,
+          MaxBet: parseFloat(maxBet) || 5000
+        }
+      };
+
+      try {
+        const res = await postDataToGAS(payload);
+        if (res.status === 'success') {
+          alert(res.message);
+        } else {
+          alert(res.message);
+        }
+      } catch (error) {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      }
+    }
+
+    // ==========================================
     // ฟังก์ชันรายงานสรุปผลรายวัน (Daily P&L Report)
     // ==========================================
     async function loadDailyReport() {
@@ -246,7 +319,6 @@
         const res = await response.json();
 
         if (res.status === 'success') {
-          // แสดงตัวเลขสรุปภาพรวม
           document.getElementById('repGrossBet').innerText = `฿${res.summary.grossBet.toLocaleString()}`;
           document.getElementById('repPayout').innerText = `-฿${res.summary.payout.toLocaleString()}`;
           document.getElementById('repCancelled').innerText = `฿${res.summary.cancelled.toLocaleString()}`;
@@ -255,7 +327,6 @@
           netProfitEl.innerText = `฿${res.summary.netProfit.toLocaleString()}`;
           netProfitEl.style.color = res.summary.netProfit >= 0 ? 'var(--green-main)' : 'var(--red-main)';
 
-          // แสดงรายการรายรอบ
           listDiv.innerHTML = '';
           if (res.rounds.length === 0) {
             listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">ยังไม่มีข้อมูลการเล่นในวันนี้</div>';
@@ -301,7 +372,7 @@
         if(res.status === 'success') {
           alert(res.message);
           fetchAdminDashboard();
-          loadDailyReport(); // โหลดรายงานใหม่เมื่อมีการเปลี่ยนสถานะรอบ
+          loadDailyReport(); 
         } else {
           alert(res.message);
         }
@@ -327,7 +398,7 @@
           alert(res.message);
           document.getElementById('txtShrimpWeight').value = '';
           fetchAdminDashboard();
-          loadDailyReport(); // อัปเดตรายงาน P&L ทันทีหลังตัดผล
+          loadDailyReport(); 
         } else {
           alert(res.message);
         }
@@ -410,7 +481,7 @@
       if(res.status === 'success') {
         alert(res.message);
         document.getElementById('txtBetId').value = "";
-        loadDailyReport(); // อัปเดตยอดรายงานหลังยกเลิกบิล
+        loadDailyReport(); 
       } else { alert(res.message); }
     }
 
