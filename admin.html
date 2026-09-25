@@ -63,7 +63,6 @@
       <h3 style="margin-top: 0; color: var(--blue-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">QR Code โต๊ะ <span id="qrTableNoDisplay"></span></h3>
       
       <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
-        <!-- ใช้ API สร้าง QR Code อัตโนมัติ -->
         <img id="qrImage" src="" alt="QR Code" style="width: 200px; height: 200px;">
       </div>
       
@@ -109,11 +108,15 @@
          หน้ารายงานสรุปผลรายวัน (Daily P&L Report)
          ========================================== -->
     <div class="card">
-      <div class="card-title" style="color: var(--green-main);"><i class="fa-solid fa-chart-line"></i> รายงานสรุปผลรายวัน (P&L Report)</div>
+      <div class="card-title" id="reportTitleText" style="color: var(--green-main);"><i class="fa-solid fa-chart-line"></i> รายงานสรุปผลรายวัน (P&L Report)</div>
       
-      <button class="btn btn-blue" style="width: 100%; margin-bottom: 15px;" onclick="loadDailyReport()">
-        <i class="fa-solid fa-rotate"></i> โหลด / อัปเดตรายงานวันนี้
-      </button>
+      <!-- ส่วนเลือกวันที่ -->
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="date" id="repDateSelector" class="form-control" style="flex: 2;">
+        <button class="btn btn-blue" style="flex: 1;" onclick="loadDailyReport()">
+          <i class="fa-solid fa-search"></i> ค้นหา
+        </button>
+      </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
         <div style="background: #0f111a; padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
@@ -134,14 +137,14 @@
         </div>
       </div>
 
-      <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">รายละเอียดกำไร/ขาดทุนรายรอบวันนี้</div>
+      <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">รายละเอียดกำไร/ขาดทุนรายรอบ</div>
       <div id="roundReportList" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
         <div style="text-align: center; color: var(--text-muted); padding: 15px;">กดปุ่มด้านบนเพื่อโหลดรายงาน</div>
       </div>
     </div>
 
     <!-- ==========================================
-         การจัดการโต๊ะ & สร้าง QR Code (ใหม่)
+         การจัดการโต๊ะ & สร้าง QR Code
          ========================================== -->
     <div class="card">
       <div class="card-title" style="color: var(--blue-main);"><i class="fa-solid fa-qrcode"></i> จัดการโต๊ะ & สแกนเข้าเล่น</div>
@@ -152,7 +155,6 @@
       </div>
 
       <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">รายชื่อโต๊ะทั้งหมด</div>
-      <!-- รายชื่อโต๊ะจะถูกดึงมาแสดงตรงนี้ -->
       <div id="tableListContainer" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
         <div style="text-align: center; color: var(--text-muted); padding: 15px;">กำลังโหลดข้อมูล...</div>
       </div>
@@ -219,7 +221,6 @@
       <div class="form-group">
         <label>รหัสสมาชิก (เช่น M0001) หรือ UID</label>
         <input type="text" id="txtTargetUserUid" class="form-control" placeholder="พิมพ์รหัส M0001 ที่นี่">
-        <small style="color: var(--text-muted); display: block; margin-top: 5px;">*ให้ลูกค้าดูรหัส M0001 จากหน้าจอของเขา แล้วแอดมินนำมาพิมพ์เปิดสิทธิ์ได้เลย</small>
       </div>
       <div class="btn-group">
         <button class="btn btn-green" onclick="setUserStatus('Active')"><i class="fa-solid fa-check"></i> อนุมัติสิทธิ์ (Active)</button>
@@ -242,7 +243,7 @@
   </div>
 
   <script>
-    let currentOpId = "Op01"; // Default for testing
+    let currentOpId = "Op01"; 
     let creditMode = "table";
 
     async function initializeApp() {
@@ -257,12 +258,11 @@
         console.log("Running in browser mode");
       }
       
-      // เรียกโหลดข้อมูลตอนเปิดหน้าแอดมิน
       fetchAdminDashboard();
       setInterval(fetchAdminDashboard, 3000);
       loadDailyReport();
       loadSettings();
-      loadTableList(); // โหลดรายชื่อโต๊ะทั้งหมด
+      loadTableList(); 
     }
 
     async function fetchAdminDashboard() {
@@ -303,6 +303,10 @@
         
         if (res.status === 'success') {
           listDiv.innerHTML = '';
+          if(res.data.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted);">ยังไม่มีโต๊ะในระบบ</div>';
+            return;
+          }
           res.data.forEach(t => {
             let card = document.createElement('div');
             card.style.cssText = "background: #0f111a; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;";
@@ -334,7 +338,7 @@
       if(res.status === 'success') {
         alert(res.message);
         document.getElementById('txtNewTable').value = '';
-        loadTableList(); // โหลดรายชื่อโต๊ะใหม่
+        loadTableList(); 
       } else {
         alert(res.message);
       }
@@ -343,14 +347,9 @@
 
     function showQrCode(tableNo) {
       document.getElementById('qrTableNoDisplay').innerText = tableNo;
-      
-      // สร้าง URL ที่ฝังเบอร์โต๊ะ (TableNo) ไว้ข้างหลัง
       let liffUrl = `https://liff.line.me/${APP_CONFIG.LIFF_ID}?table=${tableNo}`;
-      
-      // ใช้ API ของ qrserver.com ในการแปลง URL เป็นรูป QR Code
       let qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(liffUrl)}`;
       document.getElementById('qrImage').src = qrImgUrl;
-      
       document.getElementById('qrModal').classList.remove('hidden');
     }
 
@@ -389,15 +388,32 @@
     }
 
     // ==========================================
-    // ฟังก์ชันรายงานผล
+    // ฟังก์ชันรายงานผล (รองรับเลือกวันที่)
     // ==========================================
     async function loadDailyReport() {
       const listDiv = document.getElementById('roundReportList');
       listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">กำลังโหลดรายงาน...</div>';
+      
+      let dateInput = document.getElementById('repDateSelector').value;
+      let dateParam = "";
+      
+      if (dateInput) {
+        let parts = dateInput.split('-');
+        if(parts.length === 3) {
+          let yy = parts[0].substring(2,4);
+          let mm = parts[1];
+          let dd = parts[2];
+          dateParam = `&date=${yy}${mm}${dd}`;
+        }
+      }
+
       try {
-        const response = await fetch(`${APP_CONFIG.GAS_URL}?action=getDailyReport`);
+        const response = await fetch(`${APP_CONFIG.GAS_URL}?action=getDailyReport${dateParam}`);
         const res = await response.json();
         if (res.status === 'success') {
+          // เปลี่ยนชื่อ Title ให้แสดงวันที่
+          document.getElementById('reportTitleText').innerHTML = `<i class="fa-solid fa-chart-line"></i> รายงาน P&L (ประจำวันที่ ${res.date})`;
+
           document.getElementById('repGrossBet').innerText = `฿${res.summary.grossBet.toLocaleString()}`;
           document.getElementById('repPayout').innerText = `-฿${res.summary.payout.toLocaleString()}`;
           document.getElementById('repCancelled').innerText = `฿${res.summary.cancelled.toLocaleString()}`;
@@ -407,7 +423,7 @@
 
           listDiv.innerHTML = '';
           if (res.rounds.length === 0) {
-            listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">ยังไม่มีข้อมูลการเล่นในวันนี้</div>';
+            listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">ไม่มีข้อมูลการเล่นในวันนี้</div>';
             return;
           }
           res.rounds.forEach(r => {
@@ -427,7 +443,7 @@
             listDiv.appendChild(card);
           });
         } else { listDiv.innerHTML = `<div style="text-align:center; color: var(--red-main); padding: 15px;">${res.message}</div>`; }
-      } catch (e) { listDiv.innerHTML = '<div style="text-align:center; color: var(--red-main); padding: 15px;">เกิดข้อผิดพลาด</div>'; }
+      } catch (e) { listDiv.innerHTML = '<div style="text-align:center; color: var(--red-main); padding: 15px;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>'; }
     }
 
     // ==========================================
@@ -479,7 +495,7 @@
       if(res.status === 'success') {
         alert(`สำเร็จ! ยอดเงินคงเหลือ: ${res.newBalance} บาท`);
         document.getElementById('txtAmount').value = "";
-        loadTableList(); // โหลดรายชื่อโต๊ะใหม่เผื่อมีการเติมเงินเข้าโต๊ะ
+        loadTableList(); 
       } else { alert(res.message); }
     }
 
