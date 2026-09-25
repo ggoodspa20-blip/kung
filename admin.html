@@ -177,9 +177,16 @@
         </div>
       </div>
 
-      <!-- ตั้งค่าระบบบ่อ (ซ่อนจาก Operator) -->
+      <!-- ตั้งค่าระบบบ่อ (เพิ่มช่องตั้งเวลา) ซ่อนจาก Operator -->
       <div class="card" id="cardSettings">
         <div class="card-title" style="color: var(--blue-main);"><i class="fa-solid fa-gears"></i> ตั้งค่าระบบบ่อ</div>
+        
+        <div class="form-group">
+          <label>เวลาจับเวลาต่อรอบ (นาที)</label>
+          <input type="number" id="settingRoundDuration" class="form-control" placeholder="เช่น 15">
+          <small style="color: var(--yellow-text); display: block; margin-top: 5px;">*มีผลเมื่อกดเปิดรอบใหม่</small>
+        </div>
+
         <div class="form-group">
           <label>อัตราค่าน้ำ (Water Margin เช่น 0.05 คือ 5%)</label>
           <input type="number" step="0.01" id="settingWaterMargin" class="form-control" placeholder="0.05">
@@ -236,7 +243,6 @@
           currentOpId = profile.userId;
           await checkAdminAccess(currentOpId);
         } else {
-          // ถ้าเปิดในเบราว์เซอร์ปกติ ให้ Login
           liff.login();
         }
       } catch (e) {
@@ -244,41 +250,33 @@
       }
     }
 
-    // ฟังก์ชันตรวจสอบสิทธิ์ก่อนโหลดหน้า
     async function checkAdminAccess(uid) {
       try {
         const response = await fetch(`${APP_CONFIG.GAS_URL}?action=checkRole&uid=${uid}`);
         const res = await response.json();
         
         if(res.status === 'success') {
-          currentUserRole = res.role; // คืนค่าเป็น Superadmin, Admin, Operator หรือ Customer
+          currentUserRole = res.role; 
           
           if (currentUserRole === 'Customer' || currentUserRole === 'Inactive' || currentUserRole === '') {
-            // ถ้าเป็นลูกค้าทั่วไป ให้โชว์หน้า Access Denied
             document.getElementById('adminContentView').classList.add('hidden');
             document.getElementById('accessDeniedView').classList.remove('hidden');
             document.getElementById('opProfile').innerText = "ถูกปฏิเสธสิทธิ์";
           } else {
-            // ถ้าเป็นพนักงานหรือเจ้าของ ให้เข้าใช้งานได้
             document.getElementById('accessDeniedView').classList.add('hidden');
             document.getElementById('adminContentView').classList.remove('hidden');
             
-            // เปลี่ยนป้ายสถานะด้านบน
             let roleBadge = (currentUserRole === 'Superadmin' || currentUserRole === 'Admin') ? "เจ้าของบ่อ/ผจก." : "พนักงาน (Operator)";
             document.getElementById('opProfile').innerHTML = `<i class="fa-solid fa-user-tie"></i> ${roleBadge}`;
             
-            // **ส่วนจำแนกสิทธิ์การมองเห็น (Role Permissions)**
             if (currentUserRole === 'Operator') {
-              // พนักงานระดับ Operator จะถูกซ่อนการ์ด P&L และตั้งค่า
               document.getElementById('cardReport').classList.add('hidden');
               document.getElementById('cardSettings').classList.add('hidden');
             } else {
-              // เจ้าของ/ผจก. ให้โหลดข้อมูลรายงานและตั้งค่าได้
               loadDailyReport();
               loadSettings();
             }
 
-            // โหลดข้อมูลพื้นฐานที่ทุกคนต้องใช้
             fetchAdminDashboard();
             setInterval(fetchAdminDashboard, 3000);
             loadTableList(); 
@@ -359,6 +357,7 @@
           if (res.WaterMargin !== undefined) document.getElementById('settingWaterMargin').value = res.WaterMargin;
           if (res.MinBet !== undefined) document.getElementById('settingMinBet').value = res.MinBet;
           if (res.MaxBet !== undefined) document.getElementById('settingMaxBet').value = res.MaxBet;
+          if (res.RoundDuration !== undefined) document.getElementById('settingRoundDuration').value = res.RoundDuration;
         }
       } catch (e) {}
     }
@@ -367,13 +366,24 @@
       let waterMargin = document.getElementById('settingWaterMargin').value;
       let minBet = document.getElementById('settingMinBet').value;
       let maxBet = document.getElementById('settingMaxBet').value;
+      let roundDuration = document.getElementById('settingRoundDuration').value;
+
       if (!confirm("ยืนยันการบันทึกการเปลี่ยนแปลงค่าตั้งค่าระบบ?")) return;
-      const res = await postDataToGAS({ action: 'updateSettings', uid: currentOpId, settings: { WaterMargin: parseFloat(waterMargin) || 0.05, MinBet: parseFloat(minBet) || 20, MaxBet: parseFloat(maxBet) || 5000 } });
+      const res = await postDataToGAS({ 
+        action: 'updateSettings', 
+        uid: currentOpId, 
+        settings: { 
+          WaterMargin: parseFloat(waterMargin) || 0.05, 
+          MinBet: parseFloat(minBet) || 20, 
+          MaxBet: parseFloat(maxBet) || 5000,
+          RoundDuration: parseInt(roundDuration) || 15
+        } 
+      });
       alert(res.message);
     }
 
     async function loadDailyReport() {
-      if (currentUserRole === 'Operator') return; // Operator ไม่ต้องดึง P&L
+      if (currentUserRole === 'Operator') return; 
 
       const listDiv = document.getElementById('roundReportList');
       listDiv.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 15px;">กำลังโหลดรายงาน...</div>';
