@@ -42,7 +42,7 @@
     .mode-btn { flex: 1; text-align: center; padding: 10px 0; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.3s ease; }
     .mode-btn.active { background: #2a2d3d; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-    /* Round Info & Live Board (อัปเดตใหม่) */
+    /* Round Info & Live Board */
     .round-info { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
     .round-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px;}
     .round-id { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;}
@@ -210,7 +210,7 @@
         <div class="mode-btn active" id="modePrivate" onclick="setMode('private')">เล่นส่วนตัว</div>
       </div>
 
-      <!-- Round Info & Live Board Summary (อัปเดตมีเวลาถอยหลังและบาร์เปอร์เซ็นต์) -->
+      <!-- Round Info & Live Board Summary -->
       <div class="round-info">
         <div class="round-header">
           <div>
@@ -339,6 +339,7 @@
           await authenticateUser(profile);
         }
       } catch (err) {
+        console.error("LIFF Error:", err);
         alert("เกิดข้อผิดพลาดในการโหลด LINE LIFF: " + err.message);
       }
       
@@ -365,12 +366,12 @@
           // ระบบ Redirect อัตโนมัติ (แยกแอดมิน / ลูกค้า)
           // ==========================================
           if (res.role === 'Superadmin' || res.role === 'Admin' || res.role === 'Operator') {
-             // ถ้าไม่ใช่ Customer ให้เด้งไปหน้า Admin Panel ทันที
+             // ถ้าเป็นพนักงานหรือเจ้าของ ให้เด้งไปหน้า Admin Panel ทันที
              window.location.replace("admin.html");
-             return; // หยุดการทำงานหน้าผู้เล่น
+             return; 
           }
 
-          // ถ้าเป็น Customer ให้แสดงหน้าผู้เล่นตามปกติ
+          // ถ้าเป็นลูกค้าทั่วไป ให้รันคำสั่งด้านล่างต่อ
           memberId = res.memberId;
           currentUserStatus = res.userStatus; 
           
@@ -393,10 +394,13 @@
             document.getElementById('bottomNavMenu').style.display = 'none'; 
           }
         } else {
-          alert("แจ้งเตือนจากระบบ: " + res.message);
+          // หากเกิด Error จากฝั่งหลังบ้าน (เช่น หาสคริปต์ไม่เจอ หรือ Code.gs มีปัญหา)
+          alert("แจ้งเตือนจากระบบหลังบ้าน: " + res.message);
+          document.getElementById('tableDisplay').innerText = "โหลดข้อมูลไม่สำเร็จ";
         }
       } catch (error) {
-        alert("Error หลังบ้าน (Failed to fetch): ไม่สามารถเชื่อมต่อฐานข้อมูลได้ โปรดเช็คลิงก์ Web App");
+        alert("Error การเชื่อมต่อ (Failed to fetch): ไม่สามารถติดต่อฐานข้อมูลได้ โปรดตรวจสอบการตั้งค่า Deploy");
+        document.getElementById('tableDisplay').innerText = "เชื่อมต่อล้มเหลว";
       }
     }
 
@@ -443,6 +447,7 @@
       }
     }
 
+    // ฟังก์ชันนับเวลาถอยหลัง (1 วินาที)
     function startCountdownTimer() {
       if(timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -516,7 +521,9 @@
             document.getElementById('prevResultBadge').innerText = `-`;
           }
         }
-      } catch (error) {}
+      } catch (error) {
+        console.error("Fetch Error:", error);
+      }
     }
 
     async function submitBet() {
