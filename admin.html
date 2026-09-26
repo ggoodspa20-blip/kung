@@ -6,6 +6,7 @@
   <title>Admin Panel - บ่อตกกุ้ง</title>
   
   <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -231,26 +232,31 @@
   </div>
 
   <script>
+    // ประกาศตัวเชื่อมต่อ Supabase ไว้ใช้งาน
+    const supabaseUrl = APP_CONFIG.SUPABASE_URL;
+    const supabaseKey = APP_CONFIG.SUPABASE_ANON_KEY;
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     let currentOpId = "Op01"; 
     let creditMode = "table";
     let currentUserRole = "Customer";
 
     async function initializeApp() {
-  try {
-    // เรียกใช้ LIFF ID สำหรับแอดมินโดยเฉพาะ
-    await liff.init({ liffId: APP_CONFIG.LIFF_ID_ADMIN });
-    if (liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      currentOpId = profile.userId;
-      await checkAdminAccess(currentOpId);
-    } else {
-      liff.login({ redirectUri: window.location.href });
+      try {
+        // ใช้ LIFF ID สำหรับแอดมินจาก config.js ที่ถูกต้อง
+        await liff.init({ liffId: APP_CONFIG.LIFF_ID_ADMIN });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          currentOpId = profile.userId;
+          await checkAdminAccess(currentOpId);
+        } else {
+          liff.login({ redirectUri: window.location.href });
+        }
+      } catch (e) {
+        document.getElementById('opProfile').innerText = "LIFF Error";
+        alert("LIFF Error: " + e.message);
+      }
     }
-  } catch (e) {
-    document.getElementById('opProfile').innerText = "LIFF Error";
-    alert("LIFF Error: " + e.message);
-  }
-}
 
     async function checkAdminAccess(uid) {
       try {
@@ -258,7 +264,6 @@
         const res = await response.json();
         
         if(res.status === 'success') {
-          // ดึงค่าสิทธิ์ และตัดช่องว่างซ้ายขวาทิ้งให้ชัวร์
           currentUserRole = res.role ? res.role.trim() : 'Customer'; 
           
           if (currentUserRole === 'Customer' || currentUserRole === 'Inactive' || currentUserRole === '') {
