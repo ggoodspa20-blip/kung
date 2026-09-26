@@ -6,6 +6,7 @@
   <title>แอปผู้เล่น - บ่อตกกุ้ง</title>
   
   <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -305,6 +306,11 @@
   </div>
 
   <script>
+    // ประกาศตัวเชื่อมต่อ Supabase ไว้ใช้งาน
+    const supabaseUrl = APP_CONFIG.SUPABASE_URL;
+    const supabaseKey = APP_CONFIG.SUPABASE_ANON_KEY;
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     let currentLineUserId = "";
     let currentDisplayName = "";
     let selectedBetType = "";
@@ -324,6 +330,7 @@
       }
 
       try {
+        // ใช้ LIFF ID สำหรับผู้เล่นจาก config.js ที่ถูกต้อง
         await liff.init({ liffId: APP_CONFIG.LIFF_ID });
         if (!liff.isLoggedIn()) {
           liff.login();
@@ -368,15 +375,10 @@
           let userRole = res.role ? res.role.trim() : 'Customer';
           
           if (userRole === 'Superadmin' || userRole === 'Admin' || userRole === 'Operator') {
-             // เปลี่ยนข้อความบนจอให้รู้ว่าระบบกำลังทำงาน
              document.getElementById('tableDisplay').innerText = "กำลังเข้าสู่หน้าแอดมิน...";
-             
-             // สั่งบังคับเปลี่ยนหน้าเว็บไปที่ admin.html
              window.location.href = "admin.html";
-             
-             // ระบบสำรอง (Fallback) เผื่อมือถือบางรุ่นไม่ยอมรันคำสั่งด้านบน
              setTimeout(() => { window.location.assign("admin.html"); }, 800);
-             return; // หยุดทำงานโค้ดฝั่งลูกค้า
+             return; 
           }
 
           // สำหรับ Customer ให้ทำงานต่อตามปกติ
