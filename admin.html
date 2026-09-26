@@ -236,22 +236,21 @@
     let currentUserRole = "Customer";
 
     async function initializeApp() {
-      try {
-        await liff.init({ liffId: APP_CONFIG.LIFF_ID_ADMIN });
-        if (liff.isLoggedIn()) {
-          const profile = await liff.getProfile();
-          currentOpId = profile.userId;
-          await checkAdminAccess(currentOpId);
-        } else {
-          // แจ้งระบบว่า ถ้าล็อกอินเสร็จ ให้กลับมาที่หน้า admin.html
-          liff.login({ redirectUri: window.location.href });
-        }
-      } catch (e) {
-        document.getElementById('opProfile').innerText = "LIFF Error";
-        // เปลี่ยนตรงนี้ให้โชว์ข้อความ Error ของระบบจริงๆ ออกมา
-        alert("LIFF Error รหัส: " + e.message + "\n\nโปรดเช็ค LIFF ID ใน config.js ครับ");
-      }
+  try {
+    // เรียกใช้ LIFF ID สำหรับแอดมินโดยเฉพาะ
+    await liff.init({ liffId: APP_CONFIG.LIFF_ID_ADMIN });
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      currentOpId = profile.userId;
+      await checkAdminAccess(currentOpId);
+    } else {
+      liff.login({ redirectUri: window.location.href });
     }
+  } catch (e) {
+    document.getElementById('opProfile').innerText = "LIFF Error";
+    alert("LIFF Error: " + e.message);
+  }
+}
 
     async function checkAdminAccess(uid) {
       try {
